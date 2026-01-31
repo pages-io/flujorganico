@@ -103,6 +103,7 @@
             transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
             font-weight: 500;
             font-size: 0.95rem;
+            user-select: none;
         }
 
         .nav-item:hover {
@@ -572,7 +573,7 @@
             border: 1px solid var(--border);
             border-radius: var(--radius-md);
             overflow: hidden;
-            width: 100%; /* Force width */
+            width: 100%;
         }
         .cal-header, .cal-day { background: white; }
         
@@ -584,27 +585,26 @@
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            min-width: 0; /* Fix for grid expansion */
+            min-width: 0;
         }
 
         .cal-day {
             min-height: 100px;
             padding: 8px;
             position: relative;
-            min-width: 0; /* Fix for grid expansion */
+            min-width: 0;
         }
         .cal-day.today .day-num {
             background: var(--primary); color: white;
             box-shadow: 0 4px 10px rgba(0,122,255,0.4);
         }
         
-        /* Estilos para eventos en el calendario */
         .cal-task-dot {
             font-size: 0.7rem;
             padding: 4px 8px;
             border-radius: 6px;
-            background: rgba(0, 122, 255, 0.1); /* fallback */
-            color: var(--primary); /* fallback */
+            background: rgba(0, 122, 255, 0.1);
+            color: var(--primary);
             margin-top: 4px;
             white-space: nowrap;
             overflow: hidden;
@@ -700,39 +700,6 @@
         .dashboard-task-name { font-weight: 500; color: var(--text-main); }
         .dashboard-proj-tag { font-size: 0.75rem; font-weight: 600; padding: 3px 8px; border-radius: 6px; color: white; margin-left: 10px; }
 
-        .ios-checkbox {
-            appearance: none;
-            width: 22px; height: 22px;
-            border: 2px solid #C7C7CC;
-            border-radius: 50%;
-            outline: none;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-            position: relative;
-        }
-        .ios-checkbox:checked {
-            background-color: var(--primary);
-            border-color: var(--primary);
-        }
-        .ios-checkbox:checked::after {
-            content: '';
-            position: absolute;
-            top: 45%; left: 50%;
-            width: 6px; height: 10px;
-            border: solid white;
-            border-width: 0 2px 2px 0;
-            transform: translate(-50%, -50%) rotate(45deg);
-        }
-
-        .task-text {
-            font-size: 1rem;
-            flex: 1;
-            color: var(--text-main);
-            transition: color 0.2s;
-            line-height: 1.4;
-        }
-        .task-text.completed { color: #C7C7CC; text-decoration: line-through; }
-
         @media (max-width: 768px) {
             body { flex-direction: column; height: auto; }
             .sidebar { width: 100%; flex-direction: row; padding: 1rem; overflow-x: auto; border-bottom: 1px solid var(--border); gap: 10px; }
@@ -755,29 +722,29 @@
             <span>Flujo Orgánico</span>
         </div>
         <ul class="nav-links">
-            <li class="nav-item active" onclick="app.navigate('dashboard')">
+            <li class="nav-item active" data-tab="dashboard">
                 <i data-lucide="layout-grid" style="width: 20px;"></i>
                 <span>Resumen</span>
             </li>
-            <li class="nav-item" onclick="app.navigate('proyectos')">
+            <li class="nav-item" data-tab="proyectos">
                 <i data-lucide="layers" style="width: 20px;"></i>
                 <span>Proyectos</span>
             </li>
-            <li class="nav-item" onclick="app.navigate('calendario')">
+            <li class="nav-item" data-tab="calendario">
                 <i data-lucide="calendar" style="width: 20px;"></i>
                 <span>Calendario</span>
             </li>
-            <li class="nav-item" onclick="app.navigate('analiticas')">
+            <li class="nav-item" data-tab="analiticas">
                 <i data-lucide="pie-chart" style="width: 20px;"></i>
                 <span>Reportes</span>
             </li>
-            <li class="nav-item" onclick="app.navigate('configuracion')">
+            <li class="nav-item" data-tab="configuracion">
                 <i data-lucide="settings" style="width: 20px;"></i>
                 <span>Ajustes</span>
             </li>
         </ul>
         <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center;">
-            v7.1 Stable Release
+            v7.5 Final Fixed
         </div>
     </nav>
 
@@ -794,7 +761,7 @@
             </div>
             
             <div class="card-grid">
-                <div class="card stat-card" onclick="app.openDashboardDetail('projects')">
+                <div class="card stat-card" id="card-active-projects">
                     <div class="stat-content">
                         <h3>Proyectos Activos</h3>
                         <div class="value" id="dash-total">0</div>
@@ -803,7 +770,7 @@
                         <i data-lucide="folder-open" style="width:24px; height:24px;"></i>
                     </div>
                 </div>
-                <div class="card stat-card" onclick="app.openDashboardDetail('today')">
+                <div class="card stat-card" id="card-today-tasks">
                     <div class="stat-content">
                         <h3>Tareas Hoy</h3>
                         <div class="value" id="dash-today" style="color: var(--primary);">0</div>
@@ -812,7 +779,7 @@
                         <i data-lucide="list-checks" style="width:24px; height:24px;"></i>
                     </div>
                 </div>
-                <div class="card stat-card" onclick="app.openDashboardDetail('completed')">
+                <div class="card stat-card" id="card-completed-tasks">
                     <div class="stat-content">
                         <h3>Tareas Finalizadas</h3>
                         <div class="value" id="dash-done" style="color: var(--success);">0</div>
@@ -836,93 +803,13 @@
 
         <!-- PROYECTOS TAB -->
         <section id="proyectos" class="section">
-            
-            <!-- Modal Nuevo/Editar Proyecto -->
-            <div id="project-modal" class="modal-overlay">
-                <div class="modal-content">
-                    <h2 id="project-modal-title" style="margin-bottom: 0.5rem; font-size: 1.5rem;">Nuevo Proyecto</h2>
-                    <p style="color:var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">Gestiona la información general del proyecto.</p>
-                    
-                    <!-- Added novalidate to prevent native tooltips -->
-                    <form id="project-form" novalidate>
-                        <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Nombre del Proyecto</label>
-                        <input type="text" id="p-name" class="form-input" placeholder="Ej: Redes Sociales Cliente A">
-                        
-                        <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Color</label>
-                        <div class="color-picker-container" id="color-picker">
-                            <!-- JS populated -->
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <div>
-                                <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Contratación</label>
-                                <!-- CLEAN INPUT (No required attribute to avoid native validation issues) -->
-                                <input type="date" id="p-contract" class="form-input">
-                            </div>
-                            <div>
-                                <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Pubs / Semana</label>
-                                <input type="number" id="p-pubs" class="form-input" min="0" placeholder="Ej: 3">
-                            </div>
-                        </div>
-                        
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom: 25px;">
-                            <label style="font-size:1rem; font-weight:500; color:var(--text-main);">Proyecto Activo</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="p-active" checked>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-
-                        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:30px;">
-                            <button type="button" class="btn" style="background:transparent; color:var(--text-secondary); box-shadow:none; padding: 10px 20px;" onclick="app.toggleProjectModal(false)">Cancelar</button>
-                            <button type="button" class="btn" style="background: var(--primary);" onclick="app.saveProject(event)">Guardar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Modal Nueva/Editar Tarea -->
-            <div id="task-modal" class="modal-overlay">
-                <div class="modal-content">
-                    <h2 id="task-modal-title" style="margin-bottom: 0.5rem; font-size: 1.5rem;">Nueva Tarea</h2>
-                    <p style="color:var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">El estado se calculará automáticamente según las fechas.</p>
-                    
-                    <!-- Added novalidate -->
-                    <form id="task-form" novalidate>
-                        <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Nombre de la Tarea</label>
-                        <input type="text" id="t-name" class="form-input" placeholder="Ej: Redactar copy para post">
-
-                        <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Descripción</label>
-                        <textarea id="t-desc" class="form-textarea" rows="3" placeholder="Detalles adicionales..."></textarea>
-                        
-                        <!-- CLEAN INPUTS IN VERTICAL STACK (No required attribute) -->
-                        <div style="display: flex; flex-direction: column; gap: 15px;">
-                            <div>
-                                <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Inicio</label>
-                                <input type="datetime-local" id="t-start" class="form-input">
-                            </div>
-                            <div>
-                                <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Fin</label>
-                                <input type="datetime-local" id="t-end" class="form-input">
-                            </div>
-                        </div>
-
-                        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:30px;">
-                            <button type="button" class="btn" style="background:transparent; color:var(--text-secondary); box-shadow:none; padding: 10px 20px;" onclick="app.toggleTaskModal(false)">Cancelar</button>
-                            <button type="button" class="btn" style="background: var(--primary);" onclick="app.saveTask(event)">Guardar</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- List View -->
             <div id="projects-view-list">
                 <div class="header">
                     <div>
                         <div class="header-subtitle">GESTIÓN</div>
                         <h1>Mis Proyectos</h1>
                     </div>
-                    <button class="btn" onclick="app.openCreateProjectModal()">
+                    <button class="btn" id="btn-new-project">
                         <i data-lucide="plus" style="width: 18px; margin-right: 5px;"></i> Nuevo
                     </button>
                 </div>
@@ -931,21 +818,17 @@
                 </div>
             </div>
 
-            <!-- Detail View -->
             <div id="projects-view-detail" class="detail-view">
-                <div class="back-nav" onclick="app.closeProject()">
+                <div class="back-nav" id="btn-back-projects">
                     <i data-lucide="chevron-left" style="width: 18px; margin-right: 2px;"></i> Proyectos
                 </div>
                 
                 <div class="header" style="margin-bottom: 2rem;">
-                    <!-- HEADER CONTAINER FLEX ROW -->
                     <div style="display:flex; justify-content:space-between; width:100%; align-items: flex-start;">
-                        
-                        <!-- Left Side Info -->
                         <div>
                             <div style="display:flex; align-items:center; gap: 10px; margin-bottom: 12px;">
                                 <h1 id="detail-title" style="margin-bottom: 0; font-size: 2rem;">Nombre Proyecto</h1>
-                                <button class="btn-ghost" onclick="app.openEditProjectModal()" style="color:var(--text-secondary);" title="Editar Proyecto">
+                                <button class="btn-ghost" id="btn-edit-project" style="color:var(--text-secondary);" title="Editar Proyecto">
                                     <i data-lucide="pencil" style="width: 18px;"></i>
                                 </button>
                             </div>
@@ -961,7 +844,6 @@
                             </div>
                         </div>
 
-                        <!-- Right Side: Weekly Widget -->
                         <div style="text-align:right; background:white; padding:10px 15px; border-radius:14px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border:1px solid var(--border); min-width: 140px;">
                             <div style="font-size:0.7rem; color:var(--text-secondary); font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.05em;">Esta Semana</div>
                             <div style="display:flex; align-items:baseline; justify-content:flex-end; gap:4px;">
@@ -970,14 +852,12 @@
                             </div>
                             <div id="weekly-status" style="font-size:0.8rem; font-weight:600; color:var(--warning); margin-top:4px;">Sin completar</div>
                         </div>
-
                     </div>
                 </div>
 
-                <!-- Progress Bar -->
                 <div style="margin-bottom: 25px;">
                     <div style="display:flex; justify-content:space-between; margin-bottom: 10px; font-weight:600; font-size: 0.9rem; color: var(--text-secondary);">
-                        <span>PROGRESO DE TAREAS (GLOBAL)</span>
+                        <span>PROGRESO GLOBAL</span>
                         <span id="detail-percent" style="color:var(--text-main);">0%</span>
                     </div>
                     <div style="width:100%; height:8px; background:#F2F2F7; border-radius:100px; overflow:hidden;">
@@ -985,9 +865,8 @@
                     </div>
                 </div>
 
-                <!-- Botón Añadir Tarea -->
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
-                    <button class="btn" style="padding: 10px 18px; font-size: 0.9rem;" onclick="app.openCreateTaskModal()">
+                    <button class="btn" style="padding: 10px 18px; font-size: 0.9rem;" id="btn-new-task">
                         <i data-lucide="plus" style="width: 16px;"></i> Nueva Tarea
                     </button>
                 </div>
@@ -1011,42 +890,6 @@
             </div>
             <div class="calendar-grid" id="calendar-grid">
                 <!-- Calendar generated by JS -->
-            </div>
-
-            <!-- Modal Info Tarea Calendario -->
-            <div id="cal-task-modal" class="modal-overlay">
-                <div class="modal-content" style="max-width: 400px;">
-                    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom: 20px;">
-                        <h2 style="font-size: 1.4rem; margin:0;">Información de Tarea</h2>
-                        <button onclick="document.getElementById('cal-task-modal').style.display='none'" style="background:none; border:none; cursor:pointer;">
-                            <i data-lucide="x" style="color:var(--text-secondary);"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="info-label">Proyecto</div>
-                    <div id="cal-modal-project" class="project-chip">Nombre Proyecto</div>
-                    
-                    <div class="info-label" style="margin-top:12px;">Tarea</div>
-                    <div id="cal-modal-task" class="info-value">Nombre Tarea</div>
-                    
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <div>
-                            <div class="info-label">Inicio</div>
-                            <div id="cal-modal-start" class="info-value" style="font-size:0.9rem;"></div>
-                        </div>
-                        <div>
-                            <div class="info-label">Fin</div>
-                            <div id="cal-modal-end" class="info-value" style="font-size:0.9rem;"></div>
-                        </div>
-                    </div>
-
-                    <div class="info-label">Estado</div>
-                    <div id="cal-modal-status"></div>
-                    
-                    <div style="margin-top: 25px; text-align:right;">
-                        <button class="btn" onclick="document.getElementById('cal-task-modal').style.display='none'">Cerrar</button>
-                    </div>
-                </div>
             </div>
         </section>
 
@@ -1113,29 +956,76 @@
             </div>
         </section>
 
-        <!-- Generic Dashboard Detail Modal -->
-        <div id="dashboard-detail-modal" class="modal-overlay">
-            <div class="modal-content" style="max-height: 80vh; display: flex; flex-direction: column;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-                    <h2 id="db-modal-title" style="margin:0; font-size:1.5rem;">Detalle</h2>
-                    <button onclick="document.getElementById('dashboard-detail-modal').style.display='none'" style="background:none; border:none; cursor:pointer;">
-                        <i data-lucide="x" style="color:var(--text-secondary);"></i>
-                    </button>
-                </div>
-                
-                <div id="db-modal-filter-section" style="margin-bottom: 20px; display: none;">
-                    <label style="font-size:0.85rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:8px;">FILTRAR POR PROYECTO</label>
-                    <div class="custom-select-wrapper">
-                        <div style="position: relative;">
-                            <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; color: var(--text-tertiary);"></i>
-                            <input type="text" id="db-modal-search" class="form-input" placeholder="Buscar o seleccionar..." style="padding-left: 36px; margin-bottom:0; cursor:pointer;" onkeyup="app.filterDropdownOptions()" onclick="app.toggleDropdown(true)">
-                            <i data-lucide="chevron-down" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 16px; color: var(--text-tertiary); pointer-events: none;"></i>
-                        </div>
-                        <div id="db-custom-options" class="custom-options-list"></div>
-                    </div>
-                </div>
+        <!-- MODALS -->
 
-                <div id="db-modal-list" style="overflow-y: auto; flex: 1;"></div>
+        <!-- Project Modal -->
+        <div id="project-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h2 id="project-modal-title" style="margin-bottom: 0.5rem; font-size: 1.5rem;">Nuevo Proyecto</h2>
+                <p style="color:var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">Gestiona la información general del proyecto.</p>
+                <form id="project-form" novalidate>
+                    <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Nombre del Proyecto</label>
+                    <input type="text" id="p-name" class="form-input" placeholder="Ej: Redes Sociales Cliente A">
+                    
+                    <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Color</label>
+                    <div class="color-picker-container" id="color-picker"></div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Contratación</label>
+                            <input type="date" id="p-contract" class="form-input">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Pubs / Semana</label>
+                            <input type="number" id="p-pubs" class="form-input" min="0" placeholder="Ej: 3">
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom: 25px;">
+                        <label style="font-size:1rem; font-weight:500; color:var(--text-main);">Proyecto Activo</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="p-active" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:30px;">
+                        <button type="button" class="btn" style="background:transparent; color:var(--text-secondary); box-shadow:none; padding: 10px 20px;" id="btn-cancel-project">Cancelar</button>
+                        <button type="button" class="btn" style="background: var(--primary);" id="btn-save-project">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Task Modal -->
+        <div id="task-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h2 id="task-modal-title" style="margin-bottom: 0.5rem; font-size: 1.5rem;">Nueva Tarea</h2>
+                <p style="color:var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">El estado se calculará automáticamente.</p>
+                
+                <form id="task-form" novalidate>
+                    <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Nombre de la Tarea</label>
+                    <input type="text" id="t-name" class="form-input" placeholder="Ej: Redactar copy para post">
+
+                    <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Descripción</label>
+                    <textarea id="t-desc" class="form-textarea" rows="3" placeholder="Detalles adicionales..."></textarea>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Inicio</label>
+                            <input type="datetime-local" id="t-start" class="form-input">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:700; letter-spacing:0.02em; margin-bottom:8px; display:block; color:var(--text-secondary); text-transform:uppercase;">Fin</label>
+                            <input type="datetime-local" id="t-end" class="form-input">
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:30px;">
+                        <button type="button" class="btn" style="background:transparent; color:var(--text-secondary); box-shadow:none; padding: 10px 20px;" id="btn-cancel-task">Cancelar</button>
+                        <button type="button" class="btn" style="background: var(--primary);" id="btn-save-task">Guardar</button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -1148,9 +1038,71 @@
                 <h2 id="conf-modal-title" style="margin-bottom: 10px; font-size: 1.4rem;">¿Estás seguro?</h2>
                 <p id="conf-modal-msg" style="color: var(--text-secondary); margin-bottom: 25px;">Esta acción no se puede deshacer.</p>
                 <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button class="btn" style="background: transparent; color: var(--text-secondary); box-shadow: none; border: 1px solid var(--border);" onclick="app.toggleConfirmationModal(false)">Cancelar</button>
-                    <button class="btn" style="background: var(--danger); color: white;" onclick="app.confirmDelete()">Eliminar</button>
+                    <button class="btn" style="background: transparent; color: var(--text-secondary); box-shadow: none; border: 1px solid var(--border);" id="btn-cancel-delete">Cancelar</button>
+                    <button class="btn" style="background: var(--danger); color: white;" id="btn-confirm-delete">Eliminar</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Task Info Modal (Calendar/Dashboard) -->
+        <div id="cal-task-modal" class="modal-overlay">
+            <div class="modal-content" style="max-width: 400px;">
+                <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom: 20px;">
+                    <h2 style="font-size: 1.4rem; margin:0;">Información de Tarea</h2>
+                    <button id="btn-close-cal-modal" style="background:none; border:none; cursor:pointer;">
+                        <i data-lucide="x" style="color:var(--text-secondary);"></i>
+                    </button>
+                </div>
+                
+                <div class="info-label">Proyecto</div>
+                <div id="cal-modal-project" class="project-chip">Nombre Proyecto</div>
+                
+                <div class="info-label" style="margin-top:12px;">Tarea</div>
+                <div id="cal-modal-task" class="info-value">Nombre Tarea</div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div>
+                        <div class="info-label">Inicio</div>
+                        <div id="cal-modal-start" class="info-value" style="font-size:0.9rem;"></div>
+                    </div>
+                    <div>
+                        <div class="info-label">Fin</div>
+                        <div id="cal-modal-end" class="info-value" style="font-size:0.9rem;"></div>
+                    </div>
+                </div>
+
+                <div class="info-label">Estado</div>
+                <div id="cal-modal-status"></div>
+                
+                <div style="margin-top: 25px; text-align:right;">
+                    <button class="btn" id="btn-close-cal-modal-action">Cerrar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Detail Modal -->
+        <div id="dashboard-detail-modal" class="modal-overlay">
+            <div class="modal-content" style="max-height: 80vh; display: flex; flex-direction: column;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                    <h2 id="db-modal-title" style="margin:0; font-size:1.5rem;">Detalle</h2>
+                    <button id="btn-close-db-modal" style="background:none; border:none; cursor:pointer;">
+                        <i data-lucide="x" style="color:var(--text-secondary);"></i>
+                    </button>
+                </div>
+                
+                <div id="db-modal-filter-section" style="margin-bottom: 20px; display: none;">
+                    <label style="font-size:0.85rem; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:8px;">FILTRAR POR PROYECTO</label>
+                    <div class="custom-select-wrapper">
+                        <div style="position: relative;">
+                            <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; color: var(--text-tertiary);"></i>
+                            <input type="text" id="db-modal-search" class="form-input" placeholder="Buscar o seleccionar..." style="padding-left: 36px; margin-bottom:0; cursor:pointer;">
+                            <i data-lucide="chevron-down" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 16px; color: var(--text-tertiary); pointer-events: none;"></i>
+                        </div>
+                        <div id="db-custom-options" class="custom-options-list"></div>
+                    </div>
+                </div>
+
+                <div id="db-modal-list" style="overflow-y: auto; flex: 1;"></div>
             </div>
         </div>
 
@@ -1161,7 +1113,16 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        const firebaseConfig = JSON.parse(__firebase_config);
+        // USER FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyDQXAE8k0ZUG-4bygz_UDXS4WcGuJQ1pHo",
+            authDomain: "administradordeproyectos-cb460.firebaseapp.com",
+            projectId: "administradordeproyectos-cb460",
+            storageBucket: "administradordeproyectos-cb460.firebasestorage.app",
+            messagingSenderId: "823768215696",
+            appId: "1:823768215696:web:331cfc69305cff0af02815",
+            measurementId: "G-VFY50PWNV1"
+        };
 
         const app = {
             data: { projects: [] },
@@ -1175,69 +1136,107 @@
             userId: null,
             db: null,
             auth: null,
-            appId: typeof __app_id !== 'undefined' ? __app_id : 'default-app-id',
+            appId: 'administrador-proyectos-main',
             
             colors: ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#8E8E93'],
 
             async init() {
-                const firebaseApp = initializeApp(firebaseConfig);
-                this.auth = getAuth(firebaseApp);
-                this.db = getFirestore(firebaseApp);
+                try {
+                    const firebaseApp = initializeApp(firebaseConfig);
+                    this.auth = getAuth(firebaseApp);
+                    this.db = getFirestore(firebaseApp);
 
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(this.auth, __initial_auth_token);
-                } else {
+                    // Anonymous Auth
                     await signInAnonymously(this.auth);
-                }
 
-                onAuthStateChanged(this.auth, (user) => {
-                    if (user) {
-                        this.userId = user.uid;
-                        this.setupFirestoreListener();
-                    }
-                });
+                    onAuthStateChanged(this.auth, (user) => {
+                        if (user) {
+                            this.userId = user.uid;
+                            this.setupFirestoreListener();
+                        }
+                    });
 
-                this.setupDates();
-                this.renderColorPicker();
-                
-                if ("Notification" in window) {
-                    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                    // Initial UI Setup
+                    this.setupDates();
+                    this.setupEventListeners();
+                    this.renderColorPicker();
+                    this.renderDashboard();
+                    this.renderProjects();
+                    
+                    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
                         Notification.requestPermission();
                     }
+                    
+                    setInterval(() => this.checkNotificationTriggers(), 60000); 
+
+                } catch (e) {
+                    console.error("Firebase init error:", e);
+                    // Fallback to local data if needed or show error
                 }
                 
-                setInterval(() => this.checkNotificationTriggers(), 60000); 
-                
-                window.addEventListener('click', (e) => {
-                    const wrapper = document.querySelector('.custom-select-wrapper');
-                    if(wrapper && !wrapper.contains(e.target)) {
-                        this.toggleDropdown(false);
-                    }
-                    if (e.target.classList.contains('modal-overlay')) {
-                         e.target.style.display = 'none';
-                    }
-                });
-
                 lucide.createIcons();
             },
 
-            setupFirestoreListener() {
-                // IMPORTANT: User needs to set rules in Firebase Console
-                const docRef = doc(this.db, 'artifacts', this.appId, 'users', this.userId, 'data', 'main');
+            setupEventListeners() {
+                // Navigation
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const tab = item.getAttribute('data-tab');
+                        if (tab) this.navigate(tab);
+                    });
+                });
+
+                // Project Buttons
+                document.getElementById('btn-new-project').addEventListener('click', () => this.openCreateProjectModal());
+                document.getElementById('btn-back-projects').addEventListener('click', () => this.closeProject());
+                document.getElementById('btn-edit-project').addEventListener('click', () => this.openEditProjectModal());
+                document.getElementById('btn-save-project').addEventListener('click', (e) => this.saveProject(e));
+                document.getElementById('btn-cancel-project').addEventListener('click', () => this.toggleProjectModal(false));
+
+                // Task Buttons
+                document.getElementById('btn-new-task').addEventListener('click', () => this.openCreateTaskModal());
+                document.getElementById('btn-save-task').addEventListener('click', (e) => this.saveTask(e));
+                document.getElementById('btn-cancel-task').addEventListener('click', () => this.toggleTaskModal(false));
+
+                // Delete Confirmation
+                document.getElementById('btn-cancel-delete').addEventListener('click', () => this.toggleConfirmationModal(false));
+                document.getElementById('btn-confirm-delete').addEventListener('click', () => this.confirmDelete());
+
+                // Calendar Modal
+                document.getElementById('btn-close-cal-modal').addEventListener('click', () => document.getElementById('cal-task-modal').style.display='none');
+                document.getElementById('btn-close-cal-modal-action').addEventListener('click', () => document.getElementById('cal-task-modal').style.display='none');
+
+                // Dashboard Modal
+                document.getElementById('btn-close-db-modal').addEventListener('click', () => document.getElementById('dashboard-detail-modal').style.display='none');
                 
+                // Custom Select Inputs
+                const searchInput = document.getElementById('db-modal-search');
+                searchInput.addEventListener('click', () => this.toggleDropdown(true));
+                searchInput.addEventListener('keyup', () => this.filterDropdownOptions());
+                
+                // Click Outside
+                window.addEventListener('click', (e) => {
+                    const wrapper = document.querySelector('.custom-select-wrapper');
+                    if(wrapper && !wrapper.contains(e.target)) this.toggleDropdown(false);
+                    if (e.target.classList.contains('modal-overlay')) e.target.style.display = 'none';
+                });
+            },
+
+            setupFirestoreListener() {
+                const docRef = doc(this.db, 'users', this.userId, 'app_data', 'main');
                 onSnapshot(docRef, (docSnap) => {
                     if (docSnap.exists()) {
                         this.data = docSnap.data();
+                        // Re-render current view context
                         if(this.currentProjectId) {
-                            const p = this.data?.projects?.find(proj => proj.id === this.currentProjectId);
-                            if(p) this.renderTasks(p);
+                             const p = this.data?.projects?.find(proj => proj.id === this.currentProjectId);
+                             if(p) this.renderTasks(p);
                         }
                         this.renderDashboard();
                         this.renderProjects();
                         this.renderAnalytics();
                         this.renderCalendar();
                     } else {
-                        // Initialize empty
                         this.data.projects = [];
                         this.saveData();
                     }
@@ -1246,12 +1245,37 @@
 
             saveData() {
                 if (!this.userId || !this.db) return;
-                const docRef = doc(this.db, 'artifacts', this.appId, 'users', this.userId, 'data', 'main');
+                const docRef = doc(this.db, 'users', this.userId, 'app_data', 'main');
                 setDoc(docRef, this.data);
             },
 
-            // --- RENDER METHODS ---
+            // --- RENDER LOGIC ---
+            setupDates() {
+                const options = { weekday: 'long', month: 'long', day: 'numeric' };
+                const dateStr = new Date().toLocaleDateString('es-ES', options);
+                document.getElementById('date-display').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+            },
+
+            navigate(tabId) {
+                document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+                document.getElementById(tabId).classList.add('active');
+                
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                // Map data-tab to index
+                const tabs = ['dashboard', 'proyectos', 'calendario', 'analiticas', 'configuracion'];
+                const idx = tabs.indexOf(tabId);
+                if(idx !== -1) document.querySelectorAll('.nav-item')[idx].classList.add('active');
+
+                if (tabId !== 'proyectos') this.closeProject(false);
+                if (tabId === 'calendario') this.renderCalendar();
+                if (tabId === 'analiticas') this.renderAnalytics();
+                
+                setTimeout(() => lucide.createIcons(), 50);
+            },
+
+            // --- DASHBOARD ---
             renderDashboard() {
+                if(!this.data.projects) return;
                 const activeProjects = this.data.projects.filter(p => p.active);
                 let tasksTodayCount = 0;
                 let tasksDoneCount = 0;
@@ -1292,11 +1316,12 @@
                 lucide.createIcons();
             },
 
+            // --- PROJECTS ---
             renderProjects() {
                 const list = document.getElementById('project-list');
                 list.innerHTML = '';
-                if (this.data.projects.length === 0) {
-                    list.innerHTML = `<div class="empty-state"><i data-lucide="folder-dashed" style="width:48px;height:48px;"></i><p>Sin proyectos</p><button class="btn btn-ghost" onclick="app.openCreateProjectModal()">Crear uno</button></div>`;
+                if (!this.data.projects || this.data.projects.length === 0) {
+                    list.innerHTML = `<div class="empty-state"><i data-lucide="folder-dashed" style="width:48px;height:48px;"></i><p>Sin proyectos</p></div>`;
                     lucide.createIcons(); return;
                 }
                 this.data.projects.forEach(p => {
@@ -1354,66 +1379,7 @@
                 lucide.createIcons();
             },
 
-            // Helpers
-            hexToRgba(hex, alpha) {
-                const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
-                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-            },
-            toggleTaskDone(id) {
-                const p = this.data.projects.find(proj => proj.id === this.currentProjectId);
-                const t = p.tasks.find(tk => tk.id === id);
-                if(t) { t.done = !t.done; if(t.done) this.checkWeeklyGoal(p); this.saveData(); this.renderTasks(p); }
-            },
-            getTaskStatus(t) {
-                if(t.done) return {label:'Finalizado', class:'ts-done'};
-                // Safe handling for invalid dates
-                if (!t.start || !t.end) return {label:'Pendiente', class:'ts-todo'};
-                const now = new Date();
-                const start = new Date(t.start);
-                const end = new Date(t.end);
-                
-                if (isNaN(start.getTime()) || isNaN(end.getTime())) return {label:'Pendiente', class:'ts-todo'};
-
-                if(now < start) return {label:'Pendiente', class:'ts-todo'};
-                if(now > end) return {label:'Sin Publicar', class:'ts-overdue'};
-                return {label:'En Progreso', class:'ts-progress'};
-            },
-            checkWeeklyGoal(p) {
-                 const now = new Date(); const currentDay = (now.getDay() + 6) % 7; 
-                 const start = new Date(now); start.setDate(now.getDate() - currentDay); start.setHours(0,0,0,0);
-                 const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
-                 // Simple logic: if weekly count meets goal this week
-                 let count = 0;
-                 p.tasks.forEach(t => { if(t.done && new Date(t.end) >= start && new Date(t.end) <= end) count++; });
-                 const goal = parseInt(p.pubs)||0;
-                 if(count === goal) this.sendNotification("¡Meta Semanal!", `Completada para ${p.name}`);
-            },
-            updateProjectWeeklyStats(p) {
-                const now = new Date(); const currentDay = (now.getDay() + 6) % 7; 
-                const currentWeekStart = new Date(now); currentWeekStart.setDate(now.getDate() - currentDay); currentWeekStart.setHours(0,0,0,0);
-                const currentWeekEnd = new Date(currentWeekStart); currentWeekEnd.setDate(currentWeekStart.getDate() + 6); currentWeekEnd.setHours(23,59,59,999);
-                const prevWeekStart = new Date(currentWeekStart); prevWeekStart.setDate(currentWeekStart.getDate() - 7);
-                const prevWeekEnd = new Date(currentWeekStart); prevWeekEnd.setMilliseconds(prevWeekEnd.getMilliseconds() - 1);
-
-                let currentWeekCount = 0; let prevWeekCount = 0;
-                p.tasks.forEach(t => {
-                    if(t.done && t.end) { 
-                        const tDate = new Date(t.end);
-                        if(tDate >= currentWeekStart && tDate <= currentWeekEnd) currentWeekCount++;
-                        if(tDate >= prevWeekStart && tDate <= prevWeekEnd) prevWeekCount++;
-                    }
-                });
-                const goal = parseInt(p.pubs) || 0; let surplus = 0;
-                if (goal > 0 && prevWeekCount > goal) surplus = prevWeekCount - goal;
-                const totalDisplay = currentWeekCount + surplus;
-                document.getElementById('weekly-count').textContent = totalDisplay;
-                document.getElementById('weekly-total').textContent = `/ ${goal}`;
-                const statusEl = document.getElementById('weekly-status');
-                if(totalDisplay >= goal && goal > 0) { statusEl.textContent = 'Completada'; statusEl.style.color = 'var(--success)'; } 
-                else { statusEl.textContent = 'Sin completar'; statusEl.style.color = 'var(--warning)'; }
-            },
-            
-            // --- Calendar ---
+            // --- CALENDAR ---
             renderCalendar() {
                 const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
                 const now = new Date(), year = now.getFullYear(), month = now.getMonth();
@@ -1425,52 +1391,58 @@
                     const cell = document.createElement('div'); cell.className='cal-day'; if(i===now.getDate()) cell.classList.add('today');
                     cell.innerHTML = `<div class="day-num">${i}</div>`;
                     const currentDt = new Date(year, month, i); currentDt.setHours(0,0,0,0);
-                    this.data.projects.forEach(p => {
-                        if(p.active) p.tasks.forEach(t => {
-                            if (!t.start || !t.end) return;
-                            const start=new Date(t.start), end=new Date(t.end); start.setHours(0,0,0,0); end.setHours(0,0,0,0);
-                            if(currentDt >= start && currentDt <= end) {
-                                const div = document.createElement('div'); div.className = `cal-task-dot ${t.done?'done':''}`;
-                                const isDeadline = currentDt.getTime() === end.getTime();
-                                div.innerHTML = `${isDeadline ? '<i data-lucide="flag" style="width:12px;"></i>' : ''} ${t.text}`;
-                                div.style.color = p.color; div.style.borderLeftColor = p.color; div.style.background = this.hexToRgba(p.color||'#007AFF', 0.1);
-                                div.onclick = (e) => { e.stopPropagation(); this.openCalendarTaskInfo(p.id, t.id); };
-                                cell.appendChild(div);
-                            }
+                    if(this.data.projects) {
+                        this.data.projects.forEach(p => {
+                            if(p.active) p.tasks.forEach(t => {
+                                if(!t.start || !t.end) return;
+                                const start=new Date(t.start), end=new Date(t.end); start.setHours(0,0,0,0); end.setHours(0,0,0,0);
+                                if(currentDt >= start && currentDt <= end) {
+                                    const div = document.createElement('div'); div.className = `cal-task-dot ${t.done?'done':''}`;
+                                    const isDeadline = currentDt.getTime() === end.getTime();
+                                    div.innerHTML = `${isDeadline ? '<i data-lucide="flag" style="width:12px;"></i>' : ''} ${t.text}`;
+                                    div.style.color = p.color; div.style.borderLeftColor = p.color; div.style.background = this.hexToRgba(p.color||'#007AFF', 0.1);
+                                    div.onclick = (e) => { e.stopPropagation(); this.openCalendarTaskInfo(p.id, t.id); };
+                                    cell.appendChild(div);
+                                }
+                            });
                         });
-                    });
+                    }
                     grid.appendChild(cell);
                 }
             },
-            openCalendarTaskInfo(pid, tid) {
-                const p = this.data.projects.find(proj => proj.id === pid);
-                const t = p.tasks.find(task => task.id === tid);
-                if(p && t) {
-                    document.getElementById('cal-modal-project').textContent = p.name;
-                    document.getElementById('cal-modal-task').textContent = t.text;
-                    const status = this.getTaskStatus(t);
-                    document.getElementById('cal-modal-status').innerHTML = `<span class="task-status-badge ${status.class}">${status.label}</span>`;
-                    
-                    const startFmt = t.start ? new Date(t.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha';
-                    const endFmt = t.end ? new Date(t.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha';
-                    document.getElementById('cal-modal-start').textContent = startFmt;
-                    document.getElementById('cal-modal-end').textContent = endFmt;
-                    
-                    document.getElementById('cal-task-modal').style.display = 'flex';
+
+            // --- ANALYTICS ---
+            renderAnalytics() {
+                const ctx = document.getElementById('statusChart').getContext('2d');
+                const total = this.data.projects ? this.data.projects.length : 0;
+                document.getElementById('chart-total').textContent = total;
+                const scale = window.devicePixelRatio || 1;
+                ctx.canvas.width = 220 * scale; ctx.canvas.height = 220 * scale;
+                ctx.canvas.style.width = "220px"; ctx.canvas.style.height = "220px";
+                ctx.scale(scale, scale); ctx.clearRect(0, 0, 220, 220);
+                if(total === 0) {
+                    ctx.beginPath(); ctx.arc(110,110, 85, 0, 2*Math.PI); ctx.strokeStyle = '#F2F2F7'; ctx.lineWidth = 25; ctx.stroke();
+                } else {
+                    const activeCount = this.data.projects.filter(p => p.active).length;
+                    let start = -0.5 * Math.PI; 
+                    const colors = { active: '#34C759', inactive: '#E5E5EA' };
+                    ctx.beginPath(); ctx.arc(110,110, 85, 0, 2*Math.PI); ctx.strokeStyle = '#F2F2F7'; ctx.lineWidth = 25; ctx.stroke();
+                    if(activeCount > 0) {
+                        const slice = (activeCount/total) * 2 * Math.PI;
+                        ctx.beginPath(); ctx.arc(110, 110, 85, start, start+slice); ctx.strokeStyle = colors.active; ctx.lineWidth = 25; ctx.lineCap = 'round'; ctx.stroke();
+                    }
                 }
+                // Global completion
+                let totalTasks = 0, doneTasks = 0;
+                if(this.data.projects) {
+                    this.data.projects.forEach(p => { if(p.active) { totalTasks += p.tasks.length; doneTasks += p.tasks.filter(t => t.done).length; } });
+                }
+                const globalRate = totalTasks === 0 ? 0 : Math.round((doneTasks/totalTasks)*100);
+                document.getElementById('global-completion-rate').textContent = `${globalRate}%`;
+                document.getElementById('global-completion-bar').style.width = `${globalRate}%`;
             },
-            
-            // --- Modals, Colors & Logic ---
-            renderColorPicker() {
-                const container = document.getElementById('color-picker'); container.innerHTML = '';
-                this.colors.forEach(c => {
-                    const div = document.createElement('div'); div.className = 'color-option'; div.style.backgroundColor = c;
-                    if(c === this.selectedColor) div.classList.add('selected');
-                    div.onclick = () => { this.selectedColor = c; this.renderColorPicker(); };
-                    container.appendChild(div);
-                });
-            },
-            
+
+            // --- HELPER LOGIC ---
             toggleProjectModal(show) {
                 if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
                 const modal = document.getElementById('project-modal');
@@ -1563,49 +1535,86 @@
                 }
                 this.saveData(); this.renderProjects(); this.toggleConfirmationModal(false);
             },
-            // --- Notification methods (from previous logic) ---
-            sendNotification(title, body) {
-                if ("Notification" in window && Notification.permission === "granted") {
-                    new Notification(title, { body, icon: 'https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/bell.svg' });
+            openProject(id) {
+                this.currentProjectId = id; const p = this.data.projects.find(proj => proj.id === id);
+                document.getElementById('projects-view-list').style.display = 'none';
+                document.getElementById('projects-view-detail').style.display = 'block';
+                document.getElementById('detail-title').textContent = p.name;
+                document.getElementById('detail-contract').textContent = p.contractDate || '-';
+                document.getElementById('detail-pubs').textContent = p.pubs;
+                document.getElementById('detail-badge').textContent = p.active ? 'Activo' : 'Inactivo';
+                document.getElementById('detail-badge').className = p.active ? 'badge badge-active' : 'badge badge-inactive';
+                this.renderTasks(p); lucide.createIcons();
+            },
+            closeProject() { this.currentProjectId = null; document.getElementById('projects-view-detail').style.display = 'none'; document.getElementById('projects-view-list').style.display = 'block'; this.renderProjects(); },
+            toggleTaskDone(id) {
+                const p = this.data.projects.find(proj => proj.id === this.currentProjectId);
+                const t = p.tasks.find(tk => tk.id === id);
+                if(t) { t.done = !t.done; this.saveData(); this.renderTasks(p); }
+            },
+            getTaskStatus(t) {
+                if(t.done) return {label:'Finalizado', class:'ts-done'};
+                const now = new Date(), start = new Date(t.start), end = new Date(t.end);
+                if(isNaN(start.getTime()) || isNaN(end.getTime())) return {label:'Pendiente', class:'ts-todo'};
+                if(now < start) return {label:'Pendiente', class:'ts-todo'};
+                if(now > end) return {label:'Sin Publicar', class:'ts-overdue'};
+                return {label:'En Progreso', class:'ts-progress'};
+            },
+            updateProjectWeeklyStats(p) {
+                const now = new Date(); const currentDay = (now.getDay() + 6) % 7; 
+                const currentWeekStart = new Date(now); currentWeekStart.setDate(now.getDate() - currentDay); currentWeekStart.setHours(0,0,0,0);
+                const currentWeekEnd = new Date(currentWeekStart); currentWeekEnd.setDate(currentWeekStart.getDate() + 6); currentWeekEnd.setHours(23,59,59,999);
+                const prevWeekStart = new Date(currentWeekStart); prevWeekStart.setDate(currentWeekStart.getDate() - 7);
+                const prevWeekEnd = new Date(currentWeekStart); prevWeekEnd.setMilliseconds(prevWeekEnd.getMilliseconds() - 1);
+
+                let currentWeekCount = 0; let prevWeekCount = 0;
+                p.tasks.forEach(t => {
+                    if(t.done && t.end) { 
+                        const tDate = new Date(t.end);
+                        if(tDate >= currentWeekStart && tDate <= currentWeekEnd) currentWeekCount++;
+                        if(tDate >= prevWeekStart && tDate <= prevWeekEnd) prevWeekCount++;
+                    }
+                });
+                const goal = parseInt(p.pubs) || 0; let surplus = 0;
+                if (goal > 0 && prevWeekCount > goal) surplus = prevWeekCount - goal;
+                const totalDisplay = currentWeekCount + surplus;
+                document.getElementById('weekly-count').textContent = totalDisplay;
+                document.getElementById('weekly-total').textContent = `/ ${goal}`;
+                const statusEl = document.getElementById('weekly-status');
+                if(totalDisplay >= goal && goal > 0) { statusEl.textContent = 'Completada'; statusEl.style.color = 'var(--success)'; } 
+                else { statusEl.textContent = 'Sin completar'; statusEl.style.color = 'var(--warning)'; }
+            },
+            openCalendarTaskInfo(pid, tid) {
+                const p = this.data.projects.find(proj => proj.id === pid); const t = p.tasks.find(task => task.id === tid);
+                if(p && t) {
+                    document.getElementById('cal-modal-project').textContent = p.name;
+                    document.getElementById('cal-modal-task').textContent = t.text;
+                    const status = this.getTaskStatus(t);
+                    document.getElementById('cal-modal-status').innerHTML = `<span class="task-status-badge ${status.class}">${status.label}</span>`;
+                    const startFmt = t.start ? new Date(t.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha';
+                    const endFmt = t.end ? new Date(t.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha';
+                    document.getElementById('cal-modal-start').textContent = startFmt;
+                    document.getElementById('cal-modal-end').textContent = endFmt;
+                    document.getElementById('cal-task-modal').style.display = 'flex';
                 }
             },
-            checkNotificationTriggers() {
-                const now = new Date(); const currentHour = now.getHours();
-                if (currentHour >= 8 && currentHour <= 20) {
-                    const lastReminder = localStorage.getItem('last_periodic_reminder');
-                    const fourHours = 4 * 60 * 60 * 1000;
-                    if (!lastReminder || (now.getTime() - parseInt(lastReminder)) > fourHours) {
-                        this.sendNotification("Recordatorio", "Revisa el estado de tus tareas.");
-                        localStorage.setItem('last_periodic_reminder', now.getTime());
-                    }
-                }
-                this.data.projects.forEach(p => {
-                    if (!p.active) return;
-                    p.tasks.forEach(t => {
-                        if (t.done) return;
-                        const start = t.start ? new Date(t.start) : null;
-                        const end = t.end ? new Date(t.end) : null;
-                        if (start && now >= start && !t.notifiedStart) {
-                            this.sendNotification("Tarea Iniciada", `"${t.text}" ha comenzado.`);
-                            t.notifiedStart = true; this.saveData(); 
-                        }
-                        if (end) {
-                             const isToday = end.getDate() === now.getDate() && end.getMonth() === now.getMonth();
-                             if (isToday && !t.notifiedLastDay) {
-                                 this.sendNotification("Último Día", `"${t.text}" vence hoy.`);
-                                 t.notifiedLastDay = true; this.saveData();
-                             }
-                        }
-                    });
+            renderColorPicker() {
+                const container = document.getElementById('color-picker'); container.innerHTML = '';
+                this.colors.forEach(c => {
+                    const div = document.createElement('div'); div.className = 'color-option'; div.style.backgroundColor = c;
+                    if(c === this.selectedColor) div.classList.add('selected');
+                    div.onclick = () => { this.selectedColor = c; this.renderColorPicker(); };
+                    container.appendChild(div);
                 });
             },
-            // Dashboard Modals
+            hexToRgba(hex, alpha) {
+                const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            },
+            // Dashboard Detail Logic
             openDashboardDetail(type) {
-                const modalList = document.getElementById('db-modal-list');
-                const modalTitle = document.getElementById('db-modal-title');
-                const filterSection = document.getElementById('db-modal-filter-section');
-                const filterSelect = document.getElementById('db-modal-search');
-                
+                const modalList = document.getElementById('db-modal-list'); const modalTitle = document.getElementById('db-modal-title');
+                const filterSection = document.getElementById('db-modal-filter-section'); const filterSelect = document.getElementById('db-modal-search');
                 modalList.innerHTML = ''; this.currentDashboardListItems = [];
                 filterSelect.value = 'Todos los proyectos'; this.currentFilterValue = 'all';
 
@@ -1689,6 +1698,44 @@
                     }
                     container.appendChild(div);
                 });
+            },
+            // Notification
+            sendNotification(title, body) {
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification(title, { body, icon: 'https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/bell.svg' });
+                }
+            },
+            checkNotificationTriggers() {
+                const now = new Date(); const currentHour = now.getHours();
+                if (currentHour >= 8 && currentHour <= 20) {
+                    const lastReminder = localStorage.getItem('last_periodic_reminder');
+                    const fourHours = 4 * 60 * 60 * 1000;
+                    if (!lastReminder || (now.getTime() - parseInt(lastReminder)) > fourHours) {
+                        this.sendNotification("Recordatorio", "Revisa el estado de tus tareas.");
+                        localStorage.setItem('last_periodic_reminder', now.getTime());
+                    }
+                }
+                if(this.data && this.data.projects) {
+                    this.data.projects.forEach(p => {
+                        if (!p.active) return;
+                        p.tasks.forEach(t => {
+                            if (t.done) return;
+                            const start = t.start ? new Date(t.start) : null;
+                            const end = t.end ? new Date(t.end) : null;
+                            if (start && now >= start && !t.notifiedStart) {
+                                this.sendNotification("Tarea Iniciada", `"${t.text}" ha comenzado.`);
+                                t.notifiedStart = true; this.saveData(); 
+                            }
+                            if (end) {
+                                const isToday = end.getDate() === now.getDate() && end.getMonth() === now.getMonth();
+                                if (isToday && !t.notifiedLastDay) {
+                                    this.sendNotification("Último Día", `"${t.text}" vence hoy.`);
+                                    t.notifiedLastDay = true; this.saveData();
+                                }
+                            }
+                        });
+                    });
+                }
             },
             clearData() { if(confirm('¿Borrar todo?')) { localStorage.clear(); location.reload(); } }
         };
