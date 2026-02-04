@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Flujo Orgánico</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -149,22 +149,20 @@
         .dashboard-task-name { font-weight: 500; color: var(--text-main); }
         .dashboard-proj-tag { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; color: white; margin-left: 10px; text-transform: uppercase; letter-spacing: 0.02em; }
         
-        /* LOGIN OVERLAY - Hidden by default, JS toggles it */
         #login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #F5F5F7; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
         .login-card { background: white; padding: 3rem; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; }
         .login-icon { width: 60px; height: 60px; background: linear-gradient(135deg, #007AFF, #5AC8FA); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; margin: 0 auto 20px; box-shadow: 0 8px 20px rgba(0,122,255,0.3); }
 
-        .user-id-container { margin-top: auto; padding-top: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 5px; }
-        #display-user-id { font-size: 0.75rem; color: var(--text-secondary); font-family: monospace; background: #F2F2F7; padding: 4px 8px; border-radius: 6px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; transition: background 0.2s; }
-        #display-user-id:hover { background: #E5E5EA; color: var(--primary); }
-        #display-user-id::after { content: " (Copiar)"; opacity: 0; font-size: 0.6em; margin-left: 5px; }
-        #display-user-id:hover::after { opacity: 0.7; }
+        /* ACTIVITY LOG */
+        .activity-item { padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-icon { margin-top: 2px; }
+        .activity-text { font-size: 0.9rem; color: var(--text-main); line-height: 1.4; }
+        .activity-date { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 2px; }
 
-        /* VIEW DETAILS FIX */
-        .detail-view { display: none; } /* Explicitly hidden */
-
+        /* RESPONSIVE */
         @media (max-width: 768px) {
-            body { flex-direction: column; height: auto; }
+            body { flex-direction: column; height: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
             .sidebar { 
                 position: fixed; bottom: 0; left: 0; right: 0; 
                 width: 100%; height: auto; 
@@ -173,16 +171,21 @@
                 background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
                 justify-content: space-around;
                 box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+                z-index: 100;
             }
             .brand { display: none; }
             .nav-links { flex-direction: row; width: 100%; justify-content: space-around; gap: 0; }
             .nav-item { flex-direction: column; gap: 4px; padding: 6px; font-size: 0.65rem; }
             .nav-item i { width: 24px; height: 24px; margin-bottom: 2px; }
-            .user-id-container { display: none; } /* Hide ID on mobile bar */
-            .main-content { padding: 1.5rem; padding-bottom: 100px; /* Space for bottom nav */ height: 100vh; overflow-y: auto; }
+            
+            .main-content { 
+                padding: 1.5rem; 
+                padding-bottom: 100px; 
+                height: auto; 
+                overflow: visible; 
+            }
             .header h1 { font-size: 1.8rem; }
             
-            /* Responsive Modals */
             .modal-content { width: 95%; max-width: none; border-radius: 24px; }
             .project-item { flex-direction: column; align-items: flex-start; gap: 15px; }
             .project-item > div { width: 100%; justify-content: space-between; }
@@ -191,7 +194,6 @@
 </head>
 <body>
     
-    <!-- LOGIN SCREEN -->
     <div id="login-overlay">
         <div class="login-card">
             <div class="login-icon"><i data-lucide="command" style="width: 32px; height: 32px;"></i></div>
@@ -202,7 +204,6 @@
         </div>
     </div>
 
-    <!-- SIDEBAR / BOTTOM NAV -->
     <nav class="sidebar">
         <div class="brand">
             <div class="brand-icon"><i data-lucide="command" style="width: 18px; height: 18px;"></i></div>
@@ -215,11 +216,6 @@
             <li class="nav-item" data-tab="analiticas"><i data-lucide="pie-chart"></i><span>Reportes</span></li>
             <li class="nav-item" data-tab="configuracion"><i data-lucide="settings"></i><span>Ajustes</span></li>
         </ul>
-        <div class="user-id-container">
-            <span id="display-user-id" title="Haz clic para copiar">ID: ...</span>
-            <button class="btn-ghost" id="btn-edit-id" style="width: 28px; height: 28px;" title="Cambiar ID de Usuario"><i data-lucide="pencil" style="width: 14px;"></i></button>
-        </div>
-        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center; display: none;">v29.0</div>
     </nav>
 
     <main class="main-content">
@@ -261,6 +257,7 @@
                 <div id="project-list" class="project-list"></div>
             </div>
 
+            <!-- DETAIL VIEW HIDDEN BY DEFAULT -->
             <div id="projects-view-detail" class="detail-view" style="display: none;">
                 <div class="back-nav" id="btn-back-projects"><i data-lucide="chevron-left" style="width: 18px; margin-right: 2px;"></i> Proyectos</div>
                 <div class="header" style="margin-bottom: 2rem;">
@@ -333,23 +330,38 @@
         <section id="configuracion" class="section">
             <div class="header"><div><div class="header-subtitle">SISTEMA</div><h1>Ajustes</h1></div></div>
             <div class="card-grid">
+                
+                <!-- PROFILE SECTION -->
                 <div class="card">
                     <div style="display:flex; align-items:flex-start; gap: 20px;">
-                        <div style="background: #F2F2F7; padding: 15px; border-radius: 12px; font-size: 1.5rem; color: var(--text-secondary);"><i data-lucide="user-check"></i></div>
-                        <div>
-                            <h3 style="color:var(--text-main); font-size:1.1rem; margin-bottom: 8px;">Cuenta Actual</h3>
-                            <p style="color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">Estás conectado con el ID de usuario personalizado. Puedes cerrar sesión para cambiar de cuenta.</p>
-                            <button class="btn" style="background-color: #E5E5EA; color: var(--text-main); box-shadow:none; border: 1px solid rgba(0,0,0,0.1);" id="btn-logout">Cerrar Sesión</button>
+                        <div style="background: #E5E5EA; padding: 15px; border-radius: 12px; font-size: 1.5rem; color: var(--text-main);"><i data-lucide="user"></i></div>
+                        <div style="flex: 1;">
+                            <h3 style="color:var(--text-main); font-size:1.1rem; margin-bottom: 8px;">Perfil</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: 12px; font-size: 0.9rem;">Identificador único de sincronización.</p>
+                            
+                            <!-- Profile ID Area with Edit Button -->
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                <div style="background: #F5F5F7; padding: 10px; border-radius: 8px; font-family: monospace; font-weight: 600; flex: 1;" id="settings-user-id">...</div>
+                                <button class="btn-ghost" id="btn-change-profile-name" title="Editar Nombre de Perfil" style="background: #F2F2F7; border-radius: 8px; width: 40px; height: 40px;">
+                                    <i data-lucide="pencil" style="width: 18px; color: var(--primary);"></i>
+                                </button>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn" style="background: white; border: 1px solid var(--border); color: var(--text-main);" id="btn-logout">
+                                    <i data-lucide="log-out" style="width:16px; margin-right:5px;"></i> Cerrar Sesión
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card">
                     <div style="display:flex; align-items:flex-start; gap: 20px;">
                         <div style="background: #FFF0F0; padding: 15px; border-radius: 12px; font-size: 1.5rem; color: var(--danger);"><i data-lucide="trash-2"></i></div>
                         <div>
                             <h3 style="color:var(--text-main); font-size:1.1rem; margin-bottom: 8px;">Zona de Peligro</h3>
-                            <p style="color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">Esta acción eliminará todos los datos asociados al ID actual de forma permanente.</p>
+                            <p style="color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">Esta acción eliminará todos los datos asociados al ID actual. No se puede deshacer.</p>
                             <button class="btn" style="background-color: #FFF0F0; color: var(--danger); box-shadow:none; border: 1px solid rgba(255, 59, 48, 0.2);" id="btn-clear-data">Borrar Datos</button>
                         </div>
                     </div>
@@ -476,7 +488,7 @@
         const apiKey = ""; 
 
         const app = {
-            data: { projects: [] },
+            data: { projects: [], activityLog: [] },
             currentProjectId: null,
             editingProjectId: null,
             editingTaskId: null,
@@ -490,88 +502,27 @@
             auth: null,
             appId: 'administrador-proyectos-main',
             listenerUnsubscribe: null,
+            
             colors: ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#8E8E93'],
 
-            // --- 1. DATA & INIT ---
-            async init() {
-                try {
-                    const firebaseApp = initializeApp(firebaseConfig);
-                    this.auth = getAuth(firebaseApp);
-                    this.db = getFirestore(firebaseApp);
-
-                    await signInAnonymously(this.auth);
-
-                    onAuthStateChanged(this.auth, (user) => {
-                        if (user) {
-                            this.authUserId = user.uid;
-                            const savedId = localStorage.getItem('flujo_custom_id');
-                            if (savedId) {
-                                this.userId = savedId;
-                                this.renderUserId();
-                                this.setupFirestoreListener();
-                                document.getElementById('login-overlay').style.display = 'none'; // Ensure hidden on load
-                            } else {
-                                document.getElementById('login-overlay').style.display = 'flex';
-                            }
-                        }
-                    });
-
-                    this.setupDates();
-                    this.setupEventListeners();
-                    this.renderColorPicker();
-                    this.renderDashboard(); 
-                    this.renderProjects();
-                    
-                    if ("Notification" in window) {
-                        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-                            Notification.requestPermission();
-                        }
-                    }
-                    setInterval(() => this.checkNotificationTriggers(), 60000); 
-
-                } catch(e) { console.error("Init Error", e); }
-                
-                lucide.createIcons();
-            },
-
-            setupFirestoreListener() {
-                if (this.listenerUnsubscribe) this.listenerUnsubscribe();
-                if (!this.userId) return;
-
-                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'files', this.userId);
-                
-                this.listenerUnsubscribe = onSnapshot(docRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        this.data = docSnap.data();
-                        if(this.currentProjectId) {
-                             const p = this.data?.projects?.find(proj => proj.id === this.currentProjectId);
-                             if(p) this.renderTasks(p);
-                        }
-                        this.renderDashboard();
-                        this.renderProjects();
-                        this.renderAnalytics();
-                        this.renderCalendar();
-                    } else {
-                        // Initialize empty
-                        this.data = { projects: [] };
-                        this.saveData();
-                    }
+            // 1. CORE RENDER & INIT FUNCTIONS
+            renderColorPicker() {
+                const container = document.getElementById('color-picker'); 
+                if (!container) return;
+                container.innerHTML = '';
+                this.colors.forEach(c => {
+                    const div = document.createElement('div'); div.className = 'color-option'; div.style.backgroundColor = c;
+                    if(c === this.selectedColor) div.classList.add('selected');
+                    div.onclick = () => { this.selectedColor = c; this.renderColorPicker(); };
+                    container.appendChild(div);
                 });
             },
 
-            saveData() {
-                if (!this.db || !this.userId) return Promise.resolve();
-                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'files', this.userId);
-                return setDoc(docRef, this.data);
-            },
-
-            // --- 2. RENDERERS ---
             renderDashboard() {
                 if(!this.data || !this.data.projects) return;
                 const activeProjects = this.data.projects.filter(p => p.active);
                 let tasksTodayCount = 0; let tasksDoneCount = 0;
                 const today = new Date(); today.setHours(0,0,0,0);
-
                 this.data.projects.forEach(p => {
                     p.tasks.forEach(t => {
                         if(t.done) tasksDoneCount++;
@@ -582,20 +533,30 @@
                         }
                     });
                 });
-
                 document.getElementById('dash-total').textContent = activeProjects.length;
                 document.getElementById('dash-today').textContent = tasksTodayCount;
                 document.getElementById('dash-done').textContent = tasksDoneCount;
                 
                 const list = document.getElementById('recent-activity-list');
-                if (this.data.projects.length > 0) {
-                    const last = this.data.projects[this.data.projects.length - 1];
-                    const pColor = last.color || '#007AFF';
-                    list.innerHTML = `<div style="padding:15px; border-radius:16px; background:#F2F2F7; display:flex; align-items:center; gap:15px;"><div style="width:40px; height:40px; background:${this.hexToRgba(pColor,0.1)}; border-radius:10px; display:flex; align-items:center; justify-content:center; color:${pColor}; box-shadow:0 2px 5px rgba(0,0,0,0.05);"><i data-lucide="zap" style="width: 20px;"></i></div><div><div style="font-weight:600; color:var(--text-main); margin-bottom:2px;">${last.name}</div><div style="font-size:0.85rem; color:var(--text-secondary);">Creado recientemente • ${last.pubs} pubs/sem</div></div></div>`;
+                list.innerHTML = '';
+                if (this.data.activityLog && this.data.activityLog.length > 0) {
+                     this.data.activityLog.slice(0, 5).forEach(act => {
+                         const time = new Date(act.date).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' });
+                         const item = document.createElement('div');
+                         item.className = 'activity-item';
+                         item.innerHTML = `
+                            <i data-lucide="activity" class="activity-icon" style="width:16px; color:var(--primary); flex-shrink: 0;"></i>
+                            <div>
+                                <div class="activity-text">${act.text}</div>
+                                <div class="activity-date">${time}</div>
+                            </div>
+                         `;
+                         list.appendChild(item);
+                     });
+                     lucide.createIcons();
                 } else {
                     list.innerHTML = '<div style="text-align:center; padding:1rem; color:var(--text-tertiary);">Sin actividad reciente.</div>';
                 }
-                lucide.createIcons();
             },
 
             renderProjects() {
@@ -613,7 +574,7 @@
                     
                     div.addEventListener('click', () => this.openProject(p.id));
                     const delBtn = div.querySelector('.delete-btn');
-                    delBtn.addEventListener('click', (e) => this.deleteProject(e, p.id));
+                    delBtn.addEventListener('click', (e) => { e.stopPropagation(); this.deleteProject(e, p.id); });
                     
                     list.appendChild(div);
                 });
@@ -648,12 +609,10 @@
             renderCalendar() {
                 const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
                 const now = new Date(), year = now.getFullYear(), month = now.getMonth();
-                
-                // Formato estético: "Febrero 2026"
                 const monthName = new Date(year, month).toLocaleString('es-ES', { month: 'long' });
                 const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
                 document.getElementById('calendar-month-name').textContent = `${capitalizedMonth} ${year}`;
-
+                
                 ['D','L','M','X','J','V','S'].forEach(d => { const h=document.createElement('div'); h.className='cal-header'; h.textContent=d; grid.appendChild(h); });
                 const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month+1, 0).getDate();
                 for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
@@ -704,13 +663,96 @@
                         ctx.beginPath(); ctx.arc(110, 110, 85, start, start+slice); ctx.strokeStyle = colors.active; ctx.lineWidth = 25; ctx.lineCap = 'round'; ctx.stroke();
                     }
                 }
+                // Global completion
                 let totalTasks = 0, doneTasks = 0;
                 if(this.data.projects) this.data.projects.forEach(p => { if(p.active) { totalTasks += p.tasks.length; doneTasks += p.tasks.filter(t => t.done).length; } });
                 const globalRate = totalTasks === 0 ? 0 : Math.round((doneTasks/totalTasks)*100);
                 document.getElementById('global-completion-rate').textContent = `${globalRate}%`;
                 document.getElementById('global-completion-bar').style.width = `${globalRate}%`;
             },
-            
+
+            // --- 2. DATA & INIT ---
+            async init() {
+                try {
+                    const firebaseApp = initializeApp(firebaseConfig);
+                    this.auth = getAuth(firebaseApp);
+                    this.db = getFirestore(firebaseApp);
+
+                    await signInAnonymously(this.auth);
+
+                    onAuthStateChanged(this.auth, (user) => {
+                        if (user) {
+                            this.authUserId = user.uid;
+                            const savedId = localStorage.getItem('flujo_custom_id');
+                            if (savedId) {
+                                this.userId = savedId;
+                                this.renderUserId();
+                                this.setupFirestoreListener();
+                                document.getElementById('login-overlay').style.display = 'none'; 
+                            } else {
+                                document.getElementById('login-overlay').style.display = 'flex';
+                            }
+                        }
+                    });
+
+                    this.setupDates();
+                    this.setupEventListeners();
+                    this.renderColorPicker();
+                    this.renderDashboard(); 
+                    this.renderProjects();
+                    
+                    if ("Notification" in window) {
+                        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                            Notification.requestPermission();
+                        }
+                    }
+                    setInterval(() => this.checkNotificationTriggers(), 60000); 
+
+                } catch(e) { console.error("Init Error", e); }
+                lucide.createIcons();
+            },
+
+            setupFirestoreListener() {
+                if (this.listenerUnsubscribe) this.listenerUnsubscribe();
+                if (!this.userId) return;
+
+                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'files', this.userId);
+                this.listenerUnsubscribe = onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        this.data = docSnap.data();
+                        if (!this.data.activityLog) this.data.activityLog = [];
+                        
+                        if(this.currentProjectId) {
+                             const p = this.data?.projects?.find(proj => proj.id === this.currentProjectId);
+                             if(p) this.renderTasks(p);
+                        }
+                        this.renderDashboard();
+                        this.renderProjects();
+                        this.renderAnalytics();
+                        this.renderCalendar();
+                    } else {
+                        // Initialize empty
+                        this.data = { projects: [], activityLog: [] };
+                        this.saveData();
+                    }
+                });
+            },
+
+            saveData() {
+                if (!this.db || !this.userId) return Promise.resolve();
+                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'files', this.userId);
+                return setDoc(docRef, this.data);
+            },
+
+            logActivity(text) {
+                if (!this.data.activityLog) this.data.activityLog = [];
+                const now = new Date();
+                this.data.activityLog.unshift({ text, date: now.toISOString() });
+                if (this.data.activityLog.length > 20) this.data.activityLog.pop(); // Max 20 items
+                // Save is handled by the caller usually, but if called independently:
+                // this.saveData();
+            },
+
             // --- 3. EVENT LISTENERS ---
             setupEventListeners() {
                 document.querySelectorAll('.nav-item').forEach(item => {
@@ -725,6 +767,7 @@
                     if(el) el.addEventListener('click', fn);
                 };
 
+                // Login
                 safeAdd('btn-login-action', () => {
                     const input = document.getElementById('login-id-input');
                     if (input && input.value.trim() !== '') {
@@ -754,15 +797,11 @@
                 safeAdd('btn-ai-suggest', () => this.suggestTasksWithAI());
                 safeAdd('btn-ai-improve', () => this.improveTaskDescription());
                 
-                safeAdd('btn-edit-id', () => {
-                    const newId = prompt("Ingresa el ID de usuario para cargar sus datos:", this.userId);
+                safeAdd('btn-change-profile-name', () => {
+                    const newId = prompt("Ingresa el nuevo nombre de perfil:", this.userId);
                     if(newId && newId.trim() !== "") this.updateUserId(newId.trim());
                 });
 
-                safeAdd('display-user-id', () => {
-                    navigator.clipboard.writeText(this.userId).then(() => alert("ID copiado"));
-                });
-                
                 safeAdd('btn-logout', () => { localStorage.removeItem('flujo_custom_id'); location.reload(); });
 
                 safeAdd('card-projects', () => this.openDashboardDetail('projects'));
@@ -790,8 +829,8 @@
                 this.setupFirestoreListener(); 
             },
             renderUserId() {
-                const el = document.getElementById('display-user-id');
-                if(el && this.userId) el.textContent = `ID: ${this.userId.substring(0, 8)}...`;
+                const el = document.getElementById('settings-user-id');
+                if(el && this.userId) el.textContent = this.userId;
             },
             setupDates() {
                 const options = { weekday: 'long', month: 'long', day: 'numeric' };
@@ -806,7 +845,7 @@
                 const idx = tabs.indexOf(tabId);
                 if(idx !== -1) document.querySelectorAll('.nav-item')[idx].classList.add('active');
                 
-                // Fix Project Tab View State
+                // Fix View State logic
                 if (tabId === 'proyectos') {
                     if (this.currentProjectId) {
                         document.getElementById('projects-view-list').style.display = 'none';
@@ -816,8 +855,7 @@
                         document.getElementById('projects-view-detail').style.display = 'none';
                     }
                 } else {
-                    // Close project when leaving tab, unless intended persistence (user asked to fix view state)
-                    // We keep currentProjectId for state, but reset view when navigating away
+                    // Force reset project view when leaving tab
                     this.currentProjectId = null;
                     document.getElementById('projects-view-detail').style.display = 'none';
                     document.getElementById('projects-view-list').style.display = 'block';
@@ -856,15 +894,20 @@
                 const pubs = document.getElementById('p-pubs').value;
                 const isActive = document.getElementById('p-active').checked;
                 if(!name) { alert("Nombre requerido"); return; }
+                
+                let logMsg = "";
                 if (this.editingProjectId) {
                     const p = this.data.projects.find(proj => proj.id === this.editingProjectId);
                     if(p) { p.name = name; p.contractDate = contract; p.pubs = pubs; p.active = isActive; p.color = this.selectedColor;
                         if(this.currentProjectId === p.id) { document.getElementById('detail-title').textContent = p.name; this.updateProjectWeeklyStats(p); }
+                        logMsg = `Se ha editado el proyecto "${name}"`;
                     }
                 } else {
                     this.data.projects.push({ id: Date.now(), name, date: new Date().toISOString().split('T')[0], contractDate: contract, active: isActive, pubs, color: this.selectedColor, tasks: [] });
                     this.sendNotification("Proyecto Creado", name);
+                    logMsg = `Se ha creado el proyecto "${name}"`;
                 }
+                this.logActivity(logMsg);
                 this.saveData(); this.toggleProjectModal(false); this.renderProjects();
             },
             toggleTaskModal(show) {
@@ -895,13 +938,17 @@
                 const start = document.getElementById('t-start').value; const end = document.getElementById('t-end').value;
                 if(!name || !start || !end) { alert("Completa los campos"); return; }
                 const p = this.data.projects.find(proj => proj.id === this.currentProjectId);
+                let logMsg = "";
                 if (this.editingTaskId) {
                     const task = p.tasks.find(t => t.id === this.editingTaskId);
                     if(task) { task.text = name; task.desc = desc; task.start = start; task.end = end; task.notifiedStart = false; task.notifiedLastDay = false; }
+                    logMsg = `Se ha editado la tarea "${name}" en "${p.name}"`;
                 } else {
                     p.tasks.push({ id: Date.now(), text: name, desc, start, end, done: false });
                     this.sendNotification("Nueva Tarea", name);
+                    logMsg = `Se ha creado la tarea "${name}" en "${p.name}"`;
                 }
+                this.logActivity(logMsg);
                 this.saveData(); this.toggleTaskModal(false); this.renderTasks(p);
             },
             toggleConfirmationModal(show) { const modal = document.getElementById('confirmation-modal'); modal.style.display = show ? 'flex' : 'none'; if (!show) this.pendingDelete = null; },
@@ -909,92 +956,32 @@
             deleteTask(taskId) { this.pendingDelete = { type: 'task', id: taskId }; document.getElementById('conf-modal-title').textContent = '¿Eliminar Tarea?'; document.getElementById('conf-modal-msg').textContent = 'Se eliminará permanentemente.'; this.toggleConfirmationModal(true); },
             async confirmDelete() {
                 if (!this.pendingDelete) return;
+                let logMsg = "";
                 if (this.pendingDelete.type === 'reset') {
                      this.data.projects = []; await this.saveData(); location.reload(); return;
                 }
                 if (this.pendingDelete.type === 'project') {
+                    const p = this.data.projects.find(p => p.id === this.pendingDelete.id);
+                    if(p) logMsg = `Se ha eliminado el proyecto "${p.name}"`;
                     this.data.projects = this.data.projects.filter(p => p.id !== this.pendingDelete.id);
                     if (this.currentProjectId === this.pendingDelete.id) this.closeProject();
-                } else {
+                } else if (this.pendingDelete.type === 'task') {
                     const p = this.data.projects.find(proj => proj.id === this.currentProjectId);
-                    if (p) { p.tasks = p.tasks.filter(t => t.id !== this.pendingDelete.id); this.renderTasks(p); }
-                }
-                this.saveData(); this.renderProjects(); this.toggleConfirmationModal(false);
-            },
-            openProject(id) {
-                this.currentProjectId = id; const p = this.data.projects.find(proj => proj.id === id);
-                document.getElementById('projects-view-list').style.display = 'none'; document.getElementById('projects-view-detail').style.display = 'block';
-                document.getElementById('detail-title').textContent = p.name; document.getElementById('detail-contract').textContent = p.contractDate || '-';
-                document.getElementById('detail-pubs').textContent = p.pubs; document.getElementById('detail-badge').textContent = p.active ? 'Activo' : 'Inactivo';
-                document.getElementById('detail-badge').className = p.active ? 'badge badge-active' : 'badge badge-inactive';
-                this.renderTasks(p); lucide.createIcons();
-            },
-            closeProject() { this.currentProjectId = null; document.getElementById('projects-view-detail').style.display = 'none'; document.getElementById('projects-view-list').style.display = 'block'; this.renderProjects(); },
-            toggleTaskDone(id) {
-                const p = this.data.projects.find(proj => proj.id === this.currentProjectId);
-                const t = p.tasks.find(tk => tk.id === id);
-                if(t) { t.done = !t.done; this.saveData(); this.renderTasks(p); }
-            },
-            getTaskStatus(t) {
-                if(t.done) return {label:'Finalizado', class:'ts-done'};
-                const now = new Date(), start = new Date(t.start), end = new Date(t.end);
-                if(isNaN(start.getTime()) || isNaN(end.getTime())) return {label:'Pendiente', class:'ts-todo'};
-                if(now < start) return {label:'Pendiente', class:'ts-todo'};
-                if(now > end) return {label:'Sin Publicar', class:'ts-overdue', isOverdue:true};
-                return {label:'En Progreso', class:'ts-progress'};
-            },
-            updateProjectWeeklyStats(p) {
-                const now = new Date(); const currentDay = (now.getDay() + 6) % 7; 
-                const currentWeekStart = new Date(now); currentWeekStart.setDate(now.getDate() - currentDay); currentWeekStart.setHours(0,0,0,0);
-                const currentWeekEnd = new Date(currentWeekStart); currentWeekEnd.setDate(currentWeekStart.getDate() + 6); currentWeekEnd.setHours(23,59,59,999);
-                const prevWeekStart = new Date(currentWeekStart); prevWeekStart.setDate(currentWeekStart.getDate() - 7);
-                const prevWeekEnd = new Date(currentWeekStart); prevWeekEnd.setMilliseconds(prevWeekEnd.getMilliseconds() - 1);
-                let currentWeekCount = 0; let prevWeekCount = 0;
-                p.tasks.forEach(t => {
-                    if(t.done && t.end) { 
-                        const tDate = new Date(t.end);
-                        if(tDate >= currentWeekStart && tDate <= currentWeekEnd) currentWeekCount++;
-                        if(tDate >= prevWeekStart && tDate <= prevWeekEnd) prevWeekCount++;
+                    if (p) { 
+                        const t = p.tasks.find(tk => tk.id === this.pendingDelete.id);
+                        if(t) logMsg = `Se ha eliminado la tarea "${t.text}" de "${p.name}"`;
+                        p.tasks = p.tasks.filter(t => t.id !== this.pendingDelete.id); 
+                        this.renderTasks(p); 
                     }
-                });
-                const goal = parseInt(p.pubs) || 0; let surplus = 0;
-                if (goal > 0 && prevWeekCount > goal) surplus = prevWeekCount - goal;
-                const totalDisplay = currentWeekCount + surplus;
-                document.getElementById('weekly-count').textContent = totalDisplay;
-                document.getElementById('weekly-total').textContent = `/ ${goal}`;
-                const statusEl = document.getElementById('weekly-status');
-                if(totalDisplay >= goal && goal > 0) { statusEl.textContent = 'Completada'; statusEl.style.color = 'var(--success)'; } 
-                else { statusEl.textContent = 'Sin completar'; statusEl.style.color = 'var(--warning)'; }
-            },
-            openCalendarTaskInfo(pid, tid) {
-                const p = this.data.projects.find(proj => proj.id === pid); const t = p.tasks.find(task => task.id === tid);
-                if(p && t) {
-                    document.getElementById('cal-modal-project').textContent = p.name;
-                    document.getElementById('cal-modal-project').style.backgroundColor = p.color || '#007AFF';
-                    document.getElementById('cal-modal-task').textContent = t.text;
-                    const status = this.getTaskStatus(t);
-                    document.getElementById('cal-modal-status').innerHTML = `<span class="task-status-badge ${status.class}">${status.label}</span>`;
-                    const startFmt = t.start ? new Date(t.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha';
-                    const endFmt = t.end ? new Date(t.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha';
-                    document.getElementById('cal-modal-start').textContent = startFmt;
-                    document.getElementById('cal-modal-end').textContent = endFmt;
-                    document.getElementById('cal-task-modal').style.display = 'flex';
                 }
+                this.logActivity(logMsg);
+                this.saveData(); this.renderProjects(); this.toggleConfirmationModal(false);
             },
             clearData() { 
                 this.pendingDelete = { type: 'reset' };
                 document.getElementById('conf-modal-title').textContent = '¿Reiniciar Aplicación?';
                 document.getElementById('conf-modal-msg').textContent = 'Se borrarán todos los proyectos y tareas. Esta acción es irreversible.';
                 this.toggleConfirmationModal(true);
-            },
-            renderColorPicker() {
-                const container = document.getElementById('color-picker'); container.innerHTML = '';
-                this.colors.forEach(c => {
-                    const div = document.createElement('div'); div.className = 'color-option'; div.style.backgroundColor = c;
-                    if(c === this.selectedColor) div.classList.add('selected');
-                    div.onclick = () => { this.selectedColor = c; this.renderColorPicker(); };
-                    container.appendChild(div);
-                });
             },
             selectProjectFilter(id, name) {
                 document.getElementById('db-modal-search').value = name; this.currentFilterValue = id;
@@ -1044,6 +1031,8 @@
                     opt.onclick = () => this.selectProjectFilter(p.id, p.name); container.appendChild(opt);
                 });
             },
+            
+            // --- RESTORED FUNCTION ---
             openDashboardDetail(type) {
                 const modalList = document.getElementById('db-modal-list'); const modalTitle = document.getElementById('db-modal-title');
                 const filterSection = document.getElementById('db-modal-filter-section'); const filterSelect = document.getElementById('db-modal-search');
@@ -1164,7 +1153,7 @@
                         });
                     });
                 }
-            }
+            },
         };
 
         window.app = app;
