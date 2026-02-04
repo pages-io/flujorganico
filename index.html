@@ -9,6 +9,7 @@
     
     <style>
         :root {
+            /* Paleta Apple System Colors */
             --bg-body: #F5F5F7; --bg-sidebar: #FFFFFF; --bg-card: #FFFFFF;
             --primary: #007AFF; --success: #34C759; --warning: #FF9500; --danger: #FF3B30;
             --text-main: #1D1D1F; --text-secondary: #86868B; --text-tertiary: #C7C7CC;
@@ -216,7 +217,7 @@
             <li class="nav-item" data-tab="analiticas"><i data-lucide="pie-chart"></i><span>Reportes</span></li>
             <li class="nav-item" data-tab="configuracion"><i data-lucide="settings"></i><span>Ajustes</span></li>
         </ul>
-        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center; display: none;">v36.0 Final Stable</div>
+        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center; display: none;">v37.0 Mobile Fixes</div>
     </nav>
 
     <main class="main-content">
@@ -375,7 +376,7 @@
             <div class="modal-content">
                 <h2 id="project-modal-title" style="margin-bottom: 0.5rem; font-size: 1.5rem;">Nuevo Proyecto</h2>
                 <p style="color:var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">Gestiona la información general del proyecto.</p>
-                <form id="project-form" novalidate>
+                <form id="project-form" novalidate onsubmit="return false;">
                     <label>NOMBRE DEL PROYECTO</label>
                     <input type="text" id="p-name" class="form-input" placeholder="Ej: Redes Sociales Cliente A">
                     <label>COLOR</label>
@@ -416,7 +417,7 @@
             <div class="modal-content">
                 <h2 id="task-modal-title" style="margin-bottom: 0.5rem; font-size: 1.5rem;">Nueva Tarea</h2>
                 <p style="color:var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">El estado se calculará automáticamente.</p>
-                <form id="task-form" novalidate>
+                <form id="task-form" novalidate onsubmit="return false;">
                     <label>NOMBRE DE LA TAREA</label>
                     <input type="text" id="t-name" class="form-input" placeholder="Ej: Redactar copy">
                     <div style="display:flex; justify-content:space-between; align-items:baseline;">
@@ -630,10 +631,12 @@
                 if (this.listenerUnsubscribe) this.listenerUnsubscribe();
                 if (!this.userId) return;
 
-                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'files', this.userId);
+                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'users', this.userId);
                 this.listenerUnsubscribe = onSnapshot(docRef, (docSnap) => {
                     if (docSnap.exists()) {
                         this.data = docSnap.data();
+                        // Fix undefined arrays if fresh data
+                        if (!this.data.projects) this.data.projects = [];
                         if (!this.data.activityLog) this.data.activityLog = [];
                         
                         if(this.currentProjectId) {
@@ -654,7 +657,7 @@
 
             saveData() {
                 if (!this.db || !this.userId) return Promise.resolve();
-                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'files', this.userId);
+                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'users', this.userId);
                 return setDoc(docRef, this.data);
             },
 
@@ -739,9 +742,7 @@
                 const percent = total === 0 ? 0 : Math.round((done/total)*100);
                 document.getElementById('detail-percent').textContent = `${percent}%`;
                 document.getElementById('detail-bar').style.width = `${percent}%`;
-
                 if(total===0) { ui.innerHTML = `<div class="empty-state" style="padding:2rem;"><p>Sin tareas</p></div>`; return; }
-
                 p.tasks.forEach(t => {
                     const status = this.getTaskStatus(t);
                     let startDate = 'Sin fecha', endDate = 'Sin fecha';
@@ -814,7 +815,6 @@
                         ctx.beginPath(); ctx.arc(110, 110, 85, start, start+slice); ctx.strokeStyle = colors.active; ctx.lineWidth = 25; ctx.lineCap = 'round'; ctx.stroke();
                     }
                 }
-                // Global completion
                 let totalTasks = 0, doneTasks = 0;
                 if(this.data.projects) this.data.projects.forEach(p => { if(p.active) { totalTasks += p.tasks.length; doneTasks += p.tasks.filter(t => t.done).length; } });
                 const globalRate = totalTasks === 0 ? 0 : Math.round((doneTasks/totalTasks)*100);
@@ -960,27 +960,53 @@
                 this.selectedColor = p.color || '#007AFF'; this.renderColorPicker(); this.toggleProjectModal(true);
             },
             saveProject(e) {
-                e.preventDefault(); if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+                if (e) e.preventDefault(); if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+                
+                // Ensure data structure exists
+                if (!this.data.projects) this.data.projects = [];
+                
                 const name = document.getElementById('p-name').value;
                 const contract = document.getElementById('p-contract').value;
                 const pubs = document.getElementById('p-pubs').value;
                 const isActive = document.getElementById('p-active').checked;
+                
                 if(!name) { alert("Nombre requerido"); return; }
                 
                 let logMsg = "";
-                if (this.editingProjectId) {
-                    const p = this.data.projects.find(proj => proj.id === this.editingProjectId);
-                    if(p) { p.name = name; p.contractDate = contract; p.pubs = pubs; p.active = isActive; p.color = this.selectedColor;
-                        if(this.currentProjectId === p.id) { document.getElementById('detail-title').textContent = p.name; this.updateProjectWeeklyStats(p); }
-                        logMsg = `Se ha editado el proyecto "${name}"`;
+                try {
+                    if (this.editingProjectId) {
+                        const p = this.data.projects.find(proj => proj.id === this.editingProjectId);
+                        if(p) { 
+                            p.name = name; p.contractDate = contract; p.pubs = pubs; p.active = isActive; p.color = this.selectedColor;
+                            if(this.currentProjectId === p.id) { 
+                                const titleEl = document.getElementById('detail-title');
+                                if(titleEl) titleEl.textContent = p.name; 
+                                this.updateProjectWeeklyStats(p); 
+                            }
+                            logMsg = `Se ha editado el proyecto "${name}"`;
+                        }
+                    } else {
+                        this.data.projects.push({ 
+                            id: Date.now(), 
+                            name, 
+                            date: new Date().toISOString().split('T')[0], 
+                            contractDate: contract, 
+                            active: isActive, 
+                            pubs, 
+                            color: this.selectedColor, 
+                            tasks: [] 
+                        });
+                        this.sendNotification("Proyecto Creado", name);
+                        logMsg = `Se ha creado el proyecto "${name}"`;
                     }
-                } else {
-                    this.data.projects.push({ id: Date.now(), name, date: new Date().toISOString().split('T')[0], contractDate: contract, active: isActive, pubs, color: this.selectedColor, tasks: [] });
-                    this.sendNotification("Proyecto Creado", name);
-                    logMsg = `Se ha creado el proyecto "${name}"`;
+                    this.logActivity(logMsg);
+                    this.saveData(); 
+                    this.toggleProjectModal(false); 
+                    this.renderProjects();
+                } catch(err) {
+                    console.error("Save error:", err);
+                    alert("Error al guardar. Intenta recargar la página.");
                 }
-                this.logActivity(logMsg);
-                this.saveData(); this.toggleProjectModal(false); this.renderProjects();
             },
             toggleTaskModal(show) {
                 if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -1004,7 +1030,7 @@
                 this.toggleTaskModal(true);
             },
             saveTask(e) {
-                e.preventDefault(); if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+                if (e) e.preventDefault(); if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
                 if (!this.currentProjectId) return;
                 const name = document.getElementById('t-name').value; const desc = document.getElementById('t-desc').value;
                 const start = document.getElementById('t-start').value; const end = document.getElementById('t-end').value;
@@ -1077,7 +1103,6 @@
                 const currentWeekEnd = new Date(currentWeekStart); currentWeekEnd.setDate(currentWeekStart.getDate() + 6); currentWeekEnd.setHours(23,59,59,999);
                 const prevWeekStart = new Date(currentWeekStart); prevWeekStart.setDate(currentWeekStart.getDate() - 7);
                 const prevWeekEnd = new Date(currentWeekStart); prevWeekEnd.setMilliseconds(prevWeekEnd.getMilliseconds() - 1);
-
                 let currentWeekCount = 0; let prevWeekCount = 0;
                 p.tasks.forEach(t => {
                     if(t.done && t.end) { 
@@ -1191,7 +1216,6 @@
                      alert("El ID no puede estar vacío");
                 }
             },
-            // --- Missing function restored ---
             openDashboardDetail(type) {
                 const modalList = document.getElementById('db-modal-list'); const modalTitle = document.getElementById('db-modal-title');
                 const filterSection = document.getElementById('db-modal-filter-section'); const filterSelect = document.getElementById('db-modal-search');
