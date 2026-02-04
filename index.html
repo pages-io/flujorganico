@@ -139,16 +139,6 @@
         .modal-content { background: white; padding: 2.5rem; border-radius: var(--radius-lg); width: 90%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); transform: scale(0.98); animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; margin-bottom: 5vh; overflow: hidden; }
         @keyframes popIn { to {transform: scale(1); opacity: 1;} }
         
-        .info-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 4px; letter-spacing: 0.05em; }
-        .info-value { font-size: 1rem; color: var(--text-main); margin-bottom: 16px; font-weight: 500; }
-        .project-chip { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; color: white; }
-        
-        .dashboard-list-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 10px; border-bottom: 1px solid var(--border); transition: background 0.1s; border-radius: 8px; }
-        .dashboard-list-item:hover { background: #FAFAFA; }
-        .dashboard-list-item:last-child { border-bottom: none; }
-        .dashboard-task-name { font-weight: 500; color: var(--text-main); }
-        .dashboard-proj-tag { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; color: white; margin-left: 10px; text-transform: uppercase; letter-spacing: 0.02em; }
-        
         /* LOGIN OVERLAY */
         #login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #F5F5F7; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
         .login-card { background: white; padding: 3rem; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; }
@@ -179,6 +169,7 @@
             .nav-item { flex-direction: column; gap: 4px; padding: 6px; font-size: 0.65rem; }
             .nav-item i { width: 24px; height: 24px; margin-bottom: 2px; }
             
+            /* Main Content Scrolling Fix */
             .main-content { 
                 padding: 1.5rem; 
                 padding-bottom: 100px; 
@@ -217,7 +208,7 @@
             <li class="nav-item" data-tab="analiticas"><i data-lucide="pie-chart"></i><span>Reportes</span></li>
             <li class="nav-item" data-tab="configuracion"><i data-lucide="settings"></i><span>Ajustes</span></li>
         </ul>
-        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center; display: none;">v37.0 Mobile Fixes</div>
+        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center; display: none;">v38.0 Fixed</div>
     </nav>
 
     <main class="main-content">
@@ -631,7 +622,7 @@
                 if (this.listenerUnsubscribe) this.listenerUnsubscribe();
                 if (!this.userId) return;
 
-                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'users', this.userId);
+                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'files', this.userId);
                 this.listenerUnsubscribe = onSnapshot(docRef, (docSnap) => {
                     if (docSnap.exists()) {
                         this.data = docSnap.data();
@@ -657,7 +648,7 @@
 
             saveData() {
                 if (!this.db || !this.userId) return Promise.resolve();
-                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'users', this.userId);
+                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'files', this.userId);
                 return setDoc(docRef, this.data);
             },
 
@@ -742,7 +733,9 @@
                 const percent = total === 0 ? 0 : Math.round((done/total)*100);
                 document.getElementById('detail-percent').textContent = `${percent}%`;
                 document.getElementById('detail-bar').style.width = `${percent}%`;
+
                 if(total===0) { ui.innerHTML = `<div class="empty-state" style="padding:2rem;"><p>Sin tareas</p></div>`; return; }
+
                 p.tasks.forEach(t => {
                     const status = this.getTaskStatus(t);
                     let startDate = 'Sin fecha', endDate = 'Sin fecha';
@@ -815,6 +808,7 @@
                         ctx.beginPath(); ctx.arc(110, 110, 85, start, start+slice); ctx.strokeStyle = colors.active; ctx.lineWidth = 25; ctx.lineCap = 'round'; ctx.stroke();
                     }
                 }
+                // Global completion
                 let totalTasks = 0, doneTasks = 0;
                 if(this.data.projects) this.data.projects.forEach(p => { if(p.active) { totalTasks += p.tasks.length; doneTasks += p.tasks.filter(t => t.done).length; } });
                 const globalRate = totalTasks === 0 ? 0 : Math.round((doneTasks/totalTasks)*100);
@@ -1103,6 +1097,7 @@
                 const currentWeekEnd = new Date(currentWeekStart); currentWeekEnd.setDate(currentWeekStart.getDate() + 6); currentWeekEnd.setHours(23,59,59,999);
                 const prevWeekStart = new Date(currentWeekStart); prevWeekStart.setDate(currentWeekStart.getDate() - 7);
                 const prevWeekEnd = new Date(currentWeekStart); prevWeekEnd.setMilliseconds(prevWeekEnd.getMilliseconds() - 1);
+
                 let currentWeekCount = 0; let prevWeekCount = 0;
                 p.tasks.forEach(t => {
                     if(t.done && t.end) { 
@@ -1216,6 +1211,7 @@
                      alert("El ID no puede estar vacío");
                 }
             },
+            // --- Missing function restored ---
             openDashboardDetail(type) {
                 const modalList = document.getElementById('db-modal-list'); const modalTitle = document.getElementById('db-modal-title');
                 const filterSection = document.getElementById('db-modal-filter-section'); const filterSelect = document.getElementById('db-modal-search');
