@@ -648,7 +648,12 @@
             renderCalendar() {
                 const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
                 const now = new Date(), year = now.getFullYear(), month = now.getMonth();
-                document.getElementById('calendar-month-name').textContent = `Mes ${month+1} ${year}`;
+                
+                // Formato estético: "Febrero 2026"
+                const monthName = new Date(year, month).toLocaleString('es-ES', { month: 'long' });
+                const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+                document.getElementById('calendar-month-name').textContent = `${capitalizedMonth} ${year}`;
+
                 ['D','L','M','X','J','V','S'].forEach(d => { const h=document.createElement('div'); h.className='cal-header'; h.textContent=d; grid.appendChild(h); });
                 const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month+1, 0).getDate();
                 for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
