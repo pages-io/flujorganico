@@ -181,7 +181,7 @@
             .main-content { 
                 padding: 1.5rem; 
                 padding-bottom: 100px; 
-                height: auto; 
+                height: 100%; 
                 overflow: visible; 
             }
             .header h1 { font-size: 1.8rem; }
@@ -216,7 +216,7 @@
             <li class="nav-item" data-tab="analiticas"><i data-lucide="pie-chart"></i><span>Reportes</span></li>
             <li class="nav-item" data-tab="configuracion"><i data-lucide="settings"></i><span>Ajustes</span></li>
         </ul>
-        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center; display: none;">v34.0 All Functions</div>
+        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center; display: none;">v36.0 Final Stable</div>
     </nav>
 
     <main class="main-content">
@@ -258,6 +258,7 @@
                 <div id="project-list" class="project-list"></div>
             </div>
 
+            <!-- DETAIL VIEW HIDDEN BY DEFAULT -->
             <div id="projects-view-detail" class="detail-view" style="display: none;">
                 <div class="back-nav" id="btn-back-projects"><i data-lucide="chevron-left" style="width: 18px; margin-right: 2px;"></i> Proyectos</div>
                 <div class="header" style="margin-bottom: 2rem;">
@@ -714,9 +715,7 @@
             renderProjects() {
                 const list = document.getElementById('project-list'); list.innerHTML = '';
                 if (!this.data.projects || this.data.projects.length === 0) {
-                    list.innerHTML = `<div class="empty-state"><i data-lucide="folder-dashed" style="width:48px;height:48px;"></i><p>Sin proyectos</p><button class="btn btn-ghost" id="btn-create-empty">Crear uno</button></div>`;
-                    const btn = document.getElementById('btn-create-empty');
-                    if(btn) btn.addEventListener('click', () => this.openCreateProjectModal());
+                    list.innerHTML = `<div class="empty-state" style="text-align: center; padding: 2rem; color: var(--text-tertiary);"><i data-lucide="folder-dashed" style="width:48px;height:48px; margin-bottom: 10px; opacity: 0.5;"></i><p>Sin proyectos</p></div>`;
                     lucide.createIcons(); return;
                 }
                 this.data.projects.forEach(p => {
@@ -724,10 +723,9 @@
                     const pColor = p.color || '#007AFF'; const activeClass = p.active ? 'dot-active' : 'dot-inactive';
                     div.innerHTML = `<div class="project-info-left"><div class="project-icon-box" style="background:${this.hexToRgba(pColor,0.1)}; color:${pColor};"><i data-lucide="folder" style="width:20px;"></i></div><div><div style="display:flex;align-items:center;margin-bottom:4px;"><span class="status-dot ${activeClass}"></span><h3 style="font-size:1rem;font-weight:600;">${p.name}</h3></div><div style="color:var(--text-secondary);font-size:0.85rem;">${p.pubs} pubs/sem</div></div></div><div style="display:flex;align-items:center;gap:20px;"><div style="text-align:right;"><div style="font-size:0.7rem;font-weight:700;color:var(--text-tertiary);">TAREAS</div><div style="font-size:0.9rem;font-weight:600;">${p.tasks.filter(t=>t.done).length}/${p.tasks.length}</div></div><button class="btn-ghost danger delete-btn"><i data-lucide="trash-2" style="width:18px;"></i></button><i data-lucide="chevron-right" style="color:#D2D2D7; width: 20px;"></i></div>`;
                     
-                    div.onclick = () => this.openProject(p.id); 
-                    div.addEventListener('click', () => this.openProject(p.id));
+                    div.addEventListener('click', () => app.openProject(p.id));
                     const delBtn = div.querySelector('.delete-btn');
-                    delBtn.addEventListener('click', (e) => { e.stopPropagation(); this.deleteProject(e, p.id); });
+                    delBtn.addEventListener('click', (e) => { e.stopPropagation(); app.deleteProject(e, p.id); });
                     
                     list.appendChild(div);
                 });
@@ -741,7 +739,9 @@
                 const percent = total === 0 ? 0 : Math.round((done/total)*100);
                 document.getElementById('detail-percent').textContent = `${percent}%`;
                 document.getElementById('detail-bar').style.width = `${percent}%`;
+
                 if(total===0) { ui.innerHTML = `<div class="empty-state" style="padding:2rem;"><p>Sin tareas</p></div>`; return; }
+
                 p.tasks.forEach(t => {
                     const status = this.getTaskStatus(t);
                     let startDate = 'Sin fecha', endDate = 'Sin fecha';
@@ -873,7 +873,6 @@
                 // New Profile Modal Buttons
                 safeAdd('btn-cancel-profile', () => this.toggleProfileModal(false));
                 safeAdd('btn-save-profile', () => this.saveProfileId());
-                safeAdd('btn-edit-id', () => this.openProfileModal()); // Sidebar button
 
                 safeAdd('btn-logout', () => { localStorage.removeItem('flujo_custom_id'); location.reload(); });
 
