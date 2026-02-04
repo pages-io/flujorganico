@@ -9,7 +9,6 @@
     
     <style>
         :root {
-            /* Paleta Apple System Colors */
             --bg-body: #F5F5F7; --bg-sidebar: #FFFFFF; --bg-card: #FFFFFF;
             --primary: #007AFF; --success: #34C759; --warning: #FF9500; --danger: #FF3B30;
             --text-main: #1D1D1F; --text-secondary: #86868B; --text-tertiary: #C7C7CC;
@@ -19,14 +18,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
-        
-        body { 
-            background-color: var(--bg-body); 
-            color: var(--text-main); 
-            display: flex; 
-            height: 100vh; 
-            overflow: hidden; /* Desktop default */
-        }
+        body { background-color: var(--bg-body); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -170,11 +162,7 @@
 
         /* RESPONSIVE */
         @media (max-width: 768px) {
-            body { 
-                flex-direction: column; 
-                height: 100vh; /* Restore viewport height for body */
-                overflow: hidden; /* Stop body scrolling */
-            }
+            body { flex-direction: column; height: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
             .sidebar { 
                 position: fixed; bottom: 0; left: 0; right: 0; 
                 width: 100%; height: auto; 
@@ -190,13 +178,11 @@
             .nav-item { flex-direction: column; gap: 4px; padding: 6px; font-size: 0.65rem; }
             .nav-item i { width: 24px; height: 24px; margin-bottom: 2px; }
             
-            /* Main Content Scrolling Fix */
             .main-content { 
                 padding: 1.5rem; 
                 padding-bottom: 100px; 
-                height: 100%; /* Fill available space */
-                overflow-y: auto; /* Enable vertical scroll */
-                -webkit-overflow-scrolling: touch; /* Momentum scroll */
+                height: auto; 
+                overflow: visible; 
             }
             .header h1 { font-size: 1.8rem; }
             
@@ -230,8 +216,7 @@
             <li class="nav-item" data-tab="analiticas"><i data-lucide="pie-chart"></i><span>Reportes</span></li>
             <li class="nav-item" data-tab="configuracion"><i data-lucide="settings"></i><span>Ajustes</span></li>
         </ul>
-        <!-- REMOVED ID FROM SIDEBAR AS REQUESTED -->
-        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center; display: none;">v33.0 Fixed</div>
+        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center; display: none;">v34.0 All Functions</div>
     </nav>
 
     <main class="main-content">
@@ -273,7 +258,6 @@
                 <div id="project-list" class="project-list"></div>
             </div>
 
-            <!-- DETAIL VIEW HIDDEN BY DEFAULT -->
             <div id="projects-view-detail" class="detail-view" style="display: none;">
                 <div class="back-nav" id="btn-back-projects"><i data-lucide="chevron-left" style="width: 18px; margin-right: 2px;"></i> Proyectos</div>
                 <div class="header" style="margin-bottom: 2rem;">
@@ -534,7 +518,6 @@
             auth: null,
             appId: 'administrador-proyectos-main',
             listenerUnsubscribe: null,
-            
             colors: ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#8E8E93'],
 
             // 1. HELPERS & UTILS
@@ -627,6 +610,7 @@
                     this.setupDates();
                     this.setupEventListeners();
                     this.renderColorPicker();
+                    // Initial Safe Render
                     this.renderDashboard(); 
                     this.renderProjects();
                     
@@ -660,6 +644,7 @@
                         this.renderAnalytics();
                         this.renderCalendar();
                     } else {
+                        // Initialize empty
                         this.data = { projects: [], activityLog: [] };
                         this.saveData();
                     }
@@ -739,6 +724,7 @@
                     const pColor = p.color || '#007AFF'; const activeClass = p.active ? 'dot-active' : 'dot-inactive';
                     div.innerHTML = `<div class="project-info-left"><div class="project-icon-box" style="background:${this.hexToRgba(pColor,0.1)}; color:${pColor};"><i data-lucide="folder" style="width:20px;"></i></div><div><div style="display:flex;align-items:center;margin-bottom:4px;"><span class="status-dot ${activeClass}"></span><h3 style="font-size:1rem;font-weight:600;">${p.name}</h3></div><div style="color:var(--text-secondary);font-size:0.85rem;">${p.pubs} pubs/sem</div></div></div><div style="display:flex;align-items:center;gap:20px;"><div style="text-align:right;"><div style="font-size:0.7rem;font-weight:700;color:var(--text-tertiary);">TAREAS</div><div style="font-size:0.9rem;font-weight:600;">${p.tasks.filter(t=>t.done).length}/${p.tasks.length}</div></div><button class="btn-ghost danger delete-btn"><i data-lucide="trash-2" style="width:18px;"></i></button><i data-lucide="chevron-right" style="color:#D2D2D7; width: 20px;"></i></div>`;
                     
+                    div.onclick = () => this.openProject(p.id); 
                     div.addEventListener('click', () => this.openProject(p.id));
                     const delBtn = div.querySelector('.delete-btn');
                     delBtn.addEventListener('click', (e) => { e.stopPropagation(); this.deleteProject(e, p.id); });
@@ -881,12 +867,13 @@
                 safeAdd('btn-ai-improve', () => this.improveTaskDescription());
                 
                 safeAdd('btn-change-profile-name', () => {
-                   this.openProfileModal();
+                   this.openProfileModal(); // NOW CALLS MODAL
                 });
 
+                // New Profile Modal Buttons
                 safeAdd('btn-cancel-profile', () => this.toggleProfileModal(false));
                 safeAdd('btn-save-profile', () => this.saveProfileId());
-                safeAdd('btn-edit-id', () => this.openProfileModal());
+                safeAdd('btn-edit-id', () => this.openProfileModal()); // Sidebar button
 
                 safeAdd('btn-logout', () => { localStorage.removeItem('flujo_custom_id'); location.reload(); });
 
@@ -907,7 +894,17 @@
                 });
             },
 
-            // --- 5. LOGIC HELPERS ---
+            // --- 5. HELPERS ---
+            updateUserId(newId) {
+                this.userId = newId;
+                localStorage.setItem('flujo_custom_id', newId);
+                this.renderUserId();
+                this.setupFirestoreListener(); 
+            },
+            renderUserId() {
+                const el = document.getElementById('settings-user-id');
+                if(el && this.userId) el.textContent = this.userId;
+            },
             setupDates() {
                 const options = { weekday: 'long', month: 'long', day: 'numeric' };
                 const dateDisplay = document.getElementById('date-display');
@@ -921,6 +918,7 @@
                 const idx = tabs.indexOf(tabId);
                 if(idx !== -1) document.querySelectorAll('.nav-item')[idx].classList.add('active');
                 
+                // Fix View State logic
                 if (tabId === 'proyectos') {
                     if (this.currentProjectId) {
                         document.getElementById('projects-view-list').style.display = 'none';
@@ -930,6 +928,7 @@
                         document.getElementById('projects-view-detail').style.display = 'none';
                     }
                 } else {
+                    // Force reset project view when leaving tab
                     this.currentProjectId = null;
                     document.getElementById('projects-view-detail').style.display = 'none';
                     document.getElementById('projects-view-list').style.display = 'block';
@@ -1050,6 +1049,67 @@
                 }
                 this.logActivity(logMsg);
                 this.saveData(); this.renderProjects(); this.toggleConfirmationModal(false);
+            },
+            openProject(id) {
+                this.currentProjectId = id; const p = this.data.projects.find(proj => proj.id === id);
+                document.getElementById('projects-view-list').style.display = 'none'; document.getElementById('projects-view-detail').style.display = 'block';
+                document.getElementById('detail-title').textContent = p.name; document.getElementById('detail-contract').textContent = p.contractDate || '-';
+                document.getElementById('detail-pubs').textContent = p.pubs; document.getElementById('detail-badge').textContent = p.active ? 'Activo' : 'Inactivo';
+                document.getElementById('detail-badge').className = p.active ? 'badge badge-active' : 'badge badge-inactive';
+                this.renderTasks(p); lucide.createIcons();
+            },
+            closeProject() { this.currentProjectId = null; document.getElementById('projects-view-detail').style.display = 'none'; document.getElementById('projects-view-list').style.display = 'block'; this.renderProjects(); },
+            toggleTaskDone(id) {
+                const p = this.data.projects.find(proj => proj.id === this.currentProjectId);
+                const t = p.tasks.find(tk => tk.id === id);
+                if(t) { t.done = !t.done; this.saveData(); this.renderTasks(p); }
+            },
+            getTaskStatus(t) {
+                if(t.done) return {label:'Finalizado', class:'ts-done'};
+                const now = new Date(), start = new Date(t.start), end = new Date(t.end);
+                if(isNaN(start.getTime()) || isNaN(end.getTime())) return {label:'Pendiente', class:'ts-todo'};
+                if(now < start) return {label:'Pendiente', class:'ts-todo'};
+                if(now > end) return {label:'Sin Publicar', class:'ts-overdue', isOverdue:true};
+                return {label:'En Progreso', class:'ts-progress'};
+            },
+            updateProjectWeeklyStats(p) {
+                const now = new Date(); const currentDay = (now.getDay() + 6) % 7; 
+                const currentWeekStart = new Date(now); currentWeekStart.setDate(now.getDate() - currentDay); currentWeekStart.setHours(0,0,0,0);
+                const currentWeekEnd = new Date(currentWeekStart); currentWeekEnd.setDate(currentWeekStart.getDate() + 6); currentWeekEnd.setHours(23,59,59,999);
+                const prevWeekStart = new Date(currentWeekStart); prevWeekStart.setDate(currentWeekStart.getDate() - 7);
+                const prevWeekEnd = new Date(currentWeekStart); prevWeekEnd.setMilliseconds(prevWeekEnd.getMilliseconds() - 1);
+
+                let currentWeekCount = 0; let prevWeekCount = 0;
+                p.tasks.forEach(t => {
+                    if(t.done && t.end) { 
+                        const tDate = new Date(t.end);
+                        if(tDate >= currentWeekStart && tDate <= currentWeekEnd) currentWeekCount++;
+                        if(tDate >= prevWeekStart && tDate <= prevWeekEnd) prevWeekCount++;
+                    }
+                });
+                const goal = parseInt(p.pubs) || 0; let surplus = 0;
+                if (goal > 0 && prevWeekCount > goal) surplus = prevWeekCount - goal;
+                const totalDisplay = currentWeekCount + surplus;
+                document.getElementById('weekly-count').textContent = totalDisplay;
+                document.getElementById('weekly-total').textContent = `/ ${goal}`;
+                const statusEl = document.getElementById('weekly-status');
+                if(totalDisplay >= goal && goal > 0) { statusEl.textContent = 'Completada'; statusEl.style.color = 'var(--success)'; } 
+                else { statusEl.textContent = 'Sin completar'; statusEl.style.color = 'var(--warning)'; }
+            },
+            openCalendarTaskInfo(pid, tid) {
+                const p = this.data.projects.find(proj => proj.id === pid); const t = p.tasks.find(task => task.id === tid);
+                if(p && t) {
+                    document.getElementById('cal-modal-project').textContent = p.name;
+                    document.getElementById('cal-modal-project').style.backgroundColor = p.color || '#007AFF';
+                    document.getElementById('cal-modal-task').textContent = t.text;
+                    const status = this.getTaskStatus(t);
+                    document.getElementById('cal-modal-status').innerHTML = `<span class="task-status-badge ${status.class}">${status.label}</span>`;
+                    const startFmt = t.start ? new Date(t.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha';
+                    const endFmt = t.end ? new Date(t.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha';
+                    document.getElementById('cal-modal-start').textContent = startFmt;
+                    document.getElementById('cal-modal-end').textContent = endFmt;
+                    document.getElementById('cal-task-modal').style.display = 'flex';
+                }
             },
             clearData() { 
                 this.pendingDelete = { type: 'reset' };
