@@ -9,6 +9,7 @@
     
     <style>
         :root {
+            /* Paleta Apple System Colors */
             --bg-body: #F5F5F7; --bg-sidebar: #FFFFFF; --bg-card: #FFFFFF;
             --primary: #007AFF; --success: #34C759; --warning: #FF9500; --danger: #FF3B30;
             --text-main: #1D1D1F; --text-secondary: #86868B; --text-tertiary: #C7C7CC;
@@ -148,6 +149,10 @@
         .dashboard-task-name { font-weight: 500; color: var(--text-main); }
         .dashboard-proj-tag { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; color: white; margin-left: 10px; text-transform: uppercase; letter-spacing: 0.02em; }
         
+        #login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #F5F5F7; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .login-card { background: white; padding: 3rem; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; }
+        .login-icon { width: 60px; height: 60px; background: linear-gradient(135deg, #007AFF, #5AC8FA); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; margin: 0 auto 20px; box-shadow: 0 8px 20px rgba(0,122,255,0.3); }
+
         .user-id-container { margin-top: auto; padding-top: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 5px; }
         #display-user-id { font-size: 0.75rem; color: var(--text-secondary); font-family: monospace; background: #F2F2F7; padding: 4px 8px; border-radius: 6px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; transition: background 0.2s; }
         #display-user-id:hover { background: #E5E5EA; color: var(--primary); }
@@ -167,6 +172,16 @@
     </style>
 </head>
 <body>
+    
+    <div id="login-overlay">
+        <div class="login-card">
+            <div class="login-icon"><i data-lucide="command" style="width: 32px; height: 32px;"></i></div>
+            <h1 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">Bienvenido</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">Ingresa un nombre único para cargar tus datos.</p>
+            <input type="text" id="login-id-input" class="form-input" placeholder="Ej: juan, empresa-x, demo..." style="text-align: center; font-weight: 600; font-size: 1.1rem;">
+            <button class="btn" id="btn-login-action" style="width: 100%; padding: 14px; background: var(--primary);">Entrar</button>
+        </div>
+    </div>
 
     <nav class="sidebar">
         <div class="brand">
@@ -181,10 +196,10 @@
             <li class="nav-item" data-tab="configuracion"><i data-lucide="settings" style="width: 20px;"></i><span>Ajustes</span></li>
         </ul>
         <div class="user-id-container">
-            <span id="display-user-id" title="Haz clic para copiar">Cargando ID...</span>
+            <span id="display-user-id" title="Haz clic para copiar">ID: ...</span>
             <button class="btn-ghost" id="btn-edit-id" style="width: 28px; height: 28px;" title="Cambiar ID de Usuario"><i data-lucide="pencil" style="width: 14px;"></i></button>
         </div>
-        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center;">v29.0 Final Check</div>
+        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center;">v30.0 Re-built Core</div>
     </nav>
 
     <main class="main-content">
@@ -313,11 +328,11 @@
                 
                 <div class="card">
                     <div style="display:flex; align-items:flex-start; gap: 20px;">
-                        <div style="background: #FFF0F0; padding: 15px; border-radius: 12px; font-size: 1.5rem; color: var(--danger);"><i data-lucide="trash-2"></i></div>
+                        <div style="background: #FFF0F0; padding: 15px; border-radius: 12px; font-size: 1.5rem; color: var(--danger);"><i data-lucide="log-out"></i></div>
                         <div>
-                            <h3 style="color:var(--text-main); font-size:1.1rem; margin-bottom: 8px;">Zona de Peligro</h3>
-                            <p style="color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">Esta acción eliminará todos los datos asociados al ID actual. No se puede deshacer.</p>
-                            <button class="btn" style="background-color: #FFF0F0; color: var(--danger); box-shadow:none; border: 1px solid rgba(255, 59, 48, 0.2);" id="btn-clear-data">Reiniciar Aplicación</button>
+                            <h3 style="color:var(--text-main); font-size:1.1rem; margin-bottom: 8px;">Cerrar Sesión</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5;">Desconectar este dispositivo de la cuenta actual. Los datos no se borran.</p>
+                            <button class="btn" style="background-color: #FFF0F0; color: var(--danger); box-shadow:none; border: 1px solid rgba(255, 59, 48, 0.2);" id="btn-logout">Salir</button>
                         </div>
                     </div>
                 </div>
@@ -443,6 +458,7 @@
         const apiKey = ""; 
 
         const app = {
+            // STATE
             data: { projects: [] },
             currentProjectId: null,
             editingProjectId: null,
@@ -457,10 +473,153 @@
             auth: null,
             appId: 'administrador-proyectos-main',
             listenerUnsubscribe: null,
-            
             colors: ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#8E8E93'],
 
-            // --- 1. DATA & INIT ---
+            // --- 1. RENDER FUNCTIONS (TOP PRIORITY) ---
+
+            renderDashboard() {
+                if(!this.data || !this.data.projects) return;
+                const activeProjects = this.data.projects.filter(p => p.active);
+                let tasksTodayCount = 0; let tasksDoneCount = 0;
+                const today = new Date(); today.setHours(0,0,0,0);
+                this.data.projects.forEach(p => {
+                    p.tasks.forEach(t => {
+                        if(t.done) tasksDoneCount++;
+                        if (!t.done && t.start && t.end) {
+                            const start = new Date(t.start); start.setHours(0,0,0,0);
+                            const end = new Date(t.end); end.setHours(23,59,59,999);
+                            if (today >= start && today <= end) tasksTodayCount++;
+                        }
+                    });
+                });
+                document.getElementById('dash-total').textContent = activeProjects.length;
+                document.getElementById('dash-today').textContent = tasksTodayCount;
+                document.getElementById('dash-done').textContent = tasksDoneCount;
+                const list = document.getElementById('recent-activity-list');
+                if (this.data.projects.length > 0) {
+                    const last = this.data.projects[this.data.projects.length - 1];
+                    const pColor = last.color || '#007AFF';
+                    list.innerHTML = `<div style="padding:15px; border-radius:16px; background:#F2F2F7; display:flex; align-items:center; gap:15px;"><div style="width:40px; height:40px; background:${this.hexToRgba(pColor,0.1)}; border-radius:10px; display:flex; align-items:center; justify-content:center; color:${pColor}; box-shadow:0 2px 5px rgba(0,0,0,0.05);"><i data-lucide="zap" style="width: 20px;"></i></div><div><div style="font-weight:600; color:var(--text-main); margin-bottom:2px;">${last.name}</div><div style="font-size:0.85rem; color:var(--text-secondary);">Creado recientemente • ${last.pubs} pubs/sem</div></div></div>`;
+                } else {
+                    list.innerHTML = '<div style="text-align:center; padding:1rem; color:var(--text-tertiary);">Sin actividad reciente.</div>';
+                }
+                lucide.createIcons();
+            },
+
+            renderProjects() {
+                const list = document.getElementById('project-list'); list.innerHTML = '';
+                if (!this.data.projects || this.data.projects.length === 0) {
+                    list.innerHTML = `<div class="empty-state"><i data-lucide="folder-dashed" style="width:48px;height:48px;"></i><p>Sin proyectos</p><button class="btn btn-ghost" id="btn-create-empty">Crear uno</button></div>`;
+                    const btn = document.getElementById('btn-create-empty');
+                    if(btn) btn.addEventListener('click', () => this.openCreateProjectModal());
+                    lucide.createIcons(); return;
+                }
+                this.data.projects.forEach(p => {
+                    const div = document.createElement('div'); div.className = 'project-item';
+                    const pColor = p.color || '#007AFF'; const activeClass = p.active ? 'dot-active' : 'dot-inactive';
+                    div.innerHTML = `<div class="project-info-left"><div class="project-icon-box" style="background:${this.hexToRgba(pColor,0.1)}; color:${pColor};"><i data-lucide="folder" style="width:20px;"></i></div><div><div style="display:flex;align-items:center;margin-bottom:4px;"><span class="status-dot ${activeClass}"></span><h3 style="font-size:1rem;font-weight:600;">${p.name}</h3></div><div style="color:var(--text-secondary);font-size:0.85rem;">${p.pubs} pubs/sem</div></div></div><div style="display:flex;align-items:center;gap:20px;"><div style="text-align:right;"><div style="font-size:0.7rem;font-weight:700;color:var(--text-tertiary);">TAREAS</div><div style="font-size:0.9rem;font-weight:600;">${p.tasks.filter(t=>t.done).length}/${p.tasks.length}</div></div><button class="btn-ghost danger delete-btn"><i data-lucide="trash-2" style="width:18px;"></i></button><i data-lucide="chevron-right" style="color:#D2D2D7; width: 20px;"></i></div>`;
+                    div.addEventListener('click', () => this.openProject(p.id));
+                    div.querySelector('.delete-btn').addEventListener('click', (e) => this.deleteProject(e, p.id));
+                    list.appendChild(div);
+                });
+                lucide.createIcons();
+            },
+
+            renderTasks(p) {
+                this.updateProjectWeeklyStats(p);
+                const ui = document.getElementById('task-list-ui'); ui.innerHTML = '';
+                const total = p.tasks.length; const done = p.tasks.filter(t => t.done).length;
+                const percent = total === 0 ? 0 : Math.round((done/total)*100);
+                document.getElementById('detail-percent').textContent = `${percent}%`;
+                document.getElementById('detail-bar').style.width = `${percent}%`;
+                if(total===0) { ui.innerHTML = `<div class="empty-state" style="padding:2rem;"><p>Sin tareas</p></div>`; return; }
+                p.tasks.forEach(t => {
+                    const status = this.getTaskStatus(t);
+                    let startDate = 'Sin fecha', endDate = 'Sin fecha';
+                    if (t.start && !isNaN(new Date(t.start).getTime())) startDate = new Date(t.start).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+                    if (t.end && !isNaN(new Date(t.end).getTime())) endDate = new Date(t.end).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+                    const li = document.createElement('li'); li.className = 'task-item-ui';
+                    li.innerHTML = `<div class="checkbox-wrapper" style="cursor:pointer;"><input type="checkbox" class="ios-checkbox" ${t.done?'checked':''} readonly></div><div style="flex:1;"><div style="display:flex;justify-content:space-between;"><span class="task-text ${t.done?'completed':''}" style="font-weight:600;">${t.text}</span><div style="display:flex;align-items:center;gap:8px;">${status.isOverdue ? `<span style="color:var(--danger);font-size:0.7rem;font-weight:600;display:flex;align-items:center;gap:4px;"><i data-lucide="alert-circle" style="width:14px;"></i> Verificar</span>`:''}<span class="task-status-badge ${status.class}">${status.label}</span></div></div><div style="font-size:0.9rem;color:#555;margin-top:4px;">${t.desc||''}</div><div class="task-meta-row"><span><i data-lucide="clock" style="width:12px;vertical-align:middle;"></i> ${startDate}</span><span><i data-lucide="flag" style="width:12px;vertical-align:middle;"></i> ${endDate}</span></div></div><div style="display:flex;gap:5px;"><button class="btn-ghost edit-task-btn"><i data-lucide="pencil" style="width:16px;color:#007AFF;"></i></button><button class="btn-ghost danger delete-task-btn"><i data-lucide="trash-2" style="width:16px;"></i></button></div>`;
+                    li.querySelector('.checkbox-wrapper').onclick = () => this.toggleTaskDone(t.id);
+                    li.querySelector('.edit-task-btn').onclick = () => this.openEditTaskModal(t.id);
+                    li.querySelector('.delete-task-btn').onclick = () => this.deleteTask(t.id);
+                    ui.appendChild(li);
+                });
+                lucide.createIcons();
+            },
+
+            renderCalendar() {
+                const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
+                const now = new Date(), year = now.getFullYear(), month = now.getMonth();
+                document.getElementById('calendar-month-name').textContent = `Mes ${month+1} ${year}`;
+                ['D','L','M','X','J','V','S'].forEach(d => { const h=document.createElement('div'); h.className='cal-header'; h.textContent=d; grid.appendChild(h); });
+                const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month+1, 0).getDate();
+                for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
+                for(let i=1; i<=daysInMonth; i++) {
+                    const cell = document.createElement('div'); cell.className='cal-day'; if(i===now.getDate()) cell.classList.add('today');
+                    cell.innerHTML = `<div class="day-num">${i}</div>`;
+                    const currentDt = new Date(year, month, i); currentDt.setHours(0,0,0,0);
+                    if(this.data.projects) {
+                        this.data.projects.forEach(p => {
+                            if(p.active) p.tasks.forEach(t => {
+                                if(!t.start || !t.end) return;
+                                const start=new Date(t.start); start.setHours(0,0,0,0);
+                                const end=new Date(t.end); end.setHours(0,0,0,0);
+                                if(currentDt >= start && currentDt <= end) {
+                                    const div = document.createElement('div'); div.className = `cal-task-dot ${t.done?'done':''}`;
+                                    const isDeadline = currentDt.getTime() === end.getTime();
+                                    div.innerHTML = `${isDeadline ? '<i data-lucide="flag" style="width:12px;"></i>' : ''} ${t.text}`;
+                                    div.style.color = p.color; div.style.borderLeftColor = p.color; div.style.background = this.hexToRgba(p.color||'#007AFF', 0.1);
+                                    div.onclick = (e) => { e.stopPropagation(); this.openCalendarTaskInfo(p.id, t.id); };
+                                    cell.appendChild(div);
+                                }
+                            });
+                        });
+                    }
+                    grid.appendChild(cell);
+                }
+            },
+
+            renderAnalytics() {
+                const canvas = document.getElementById('statusChart');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const total = this.data.projects ? this.data.projects.length : 0;
+                document.getElementById('chart-total').textContent = total;
+                const scale = window.devicePixelRatio || 1;
+                ctx.canvas.width = 220 * scale; ctx.canvas.height = 220 * scale;
+                ctx.canvas.style.width = "220px"; ctx.canvas.style.height = "220px";
+                ctx.scale(scale, scale); ctx.clearRect(0, 0, 220, 220);
+                if(total === 0) {
+                    ctx.beginPath(); ctx.arc(110,110, 85, 0, 2*Math.PI); ctx.strokeStyle = '#F2F2F7'; ctx.lineWidth = 25; ctx.stroke();
+                } else {
+                    const activeCount = this.data.projects.filter(p => p.active).length;
+                    let start = -0.5 * Math.PI; 
+                    const colors = { active: '#34C759', inactive: '#E5E5EA' };
+                    ctx.beginPath(); ctx.arc(110,110, 85, 0, 2*Math.PI); ctx.strokeStyle = '#F2F2F7'; ctx.lineWidth = 25; ctx.stroke();
+                    if(activeCount > 0) {
+                        const slice = (activeCount/total) * 2 * Math.PI;
+                        ctx.beginPath(); ctx.arc(110, 110, 85, start, start+slice); ctx.strokeStyle = colors.active; ctx.lineWidth = 25; ctx.lineCap = 'round'; ctx.stroke();
+                    }
+                }
+                let totalTasks = 0, doneTasks = 0;
+                if(this.data.projects) this.data.projects.forEach(p => { if(p.active) { totalTasks += p.tasks.length; doneTasks += p.tasks.filter(t => t.done).length; } });
+                const globalRate = totalTasks === 0 ? 0 : Math.round((doneTasks/totalTasks)*100);
+                document.getElementById('global-completion-rate').textContent = `${globalRate}%`;
+                document.getElementById('global-completion-bar').style.width = `${globalRate}%`;
+            },
+            
+            renderColorPicker() {
+                const container = document.getElementById('color-picker'); container.innerHTML = '';
+                this.colors.forEach(c => {
+                    const div = document.createElement('div'); div.className = 'color-option'; div.style.backgroundColor = c;
+                    if(c === this.selectedColor) div.classList.add('selected');
+                    div.onclick = () => { this.selectedColor = c; this.renderColorPicker(); };
+                    container.appendChild(div);
+                });
+            },
+
+            // --- 2. INIT & FIREBASE ---
             async init() {
                 try {
                     const firebaseApp = initializeApp(firebaseConfig);
@@ -473,32 +632,38 @@
                         if (user) {
                             this.authUserId = user.uid;
                             const savedId = localStorage.getItem('flujo_custom_id');
-                            this.userId = savedId || user.uid;
-                            this.renderUserId();
-                            this.setupFirestoreListener();
+                            if (savedId) {
+                                this.userId = savedId;
+                                this.renderUserId();
+                                this.setupFirestoreListener();
+                            } else {
+                                document.getElementById('login-overlay').style.display = 'flex';
+                            }
                         }
                     });
 
                     this.setupDates();
                     this.setupEventListeners();
                     this.renderColorPicker();
+                    this.renderDashboard(); 
+                    this.renderProjects();
                     
-                    if ("Notification" in window) {
-                        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-                            Notification.requestPermission();
-                        }
+                    if ("Notification" in window && Notification.permission !== "granted") {
+                        Notification.requestPermission();
                     }
                     setInterval(() => this.checkNotificationTriggers(), 60000); 
 
                 } catch(e) { console.error("Init Error", e); }
-                
                 lucide.createIcons();
             },
 
-            // --- 2. FIREBASE PUBLIC SYNC ---
             setupFirestoreListener() {
+                if (this.listenerUnsubscribe) this.listenerUnsubscribe();
+                if (!this.userId) return;
+
                 const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'files', this.userId);
-                onSnapshot(docRef, (docSnap) => {
+                
+                this.listenerUnsubscribe = onSnapshot(docRef, (docSnap) => {
                     if (docSnap.exists()) {
                         this.data = docSnap.data();
                         if(this.currentProjectId) {
@@ -522,7 +687,12 @@
                 return setDoc(docRef, this.data);
             },
 
-            // --- 3. EVENT LISTENERS ---
+            // --- 3. UI EVENTS & LOGIC ---
+            setupDates() {
+                const options = { weekday: 'long', month: 'long', day: 'numeric' };
+                const dateDisplay = document.getElementById('date-display');
+                if (dateDisplay) dateDisplay.textContent = new Date().toLocaleDateString('es-ES', options);
+            },
             setupEventListeners() {
                 document.querySelectorAll('.nav-item').forEach(item => {
                     item.addEventListener('click', () => {
@@ -530,84 +700,58 @@
                         if (tab) this.navigate(tab);
                     });
                 });
+                const safeAdd = (id, fn) => { const el = document.getElementById(id); if(el) el.addEventListener('click', fn); };
 
-                const safeAdd = (id, fn) => {
-                    const el = document.getElementById(id);
-                    if(el) el.addEventListener('click', fn);
-                };
+                safeAdd('btn-login-action', () => {
+                    const input = document.getElementById('login-id-input');
+                    if (input && input.value.trim() !== '') {
+                        this.updateUserId(input.value.trim());
+                        document.getElementById('login-overlay').style.display = 'none';
+                    } else { alert("Por favor escribe un nombre."); }
+                });
 
                 safeAdd('btn-new-project', () => this.openCreateProjectModal());
                 safeAdd('btn-back-projects', () => this.closeProject());
                 safeAdd('btn-edit-project', () => this.openEditProjectModal());
                 safeAdd('btn-save-project', (e) => this.saveProject(e));
                 safeAdd('btn-cancel-project', () => this.toggleProjectModal(false));
-
                 safeAdd('btn-new-task', () => this.openCreateTaskModal());
                 safeAdd('btn-save-task', (e) => this.saveTask(e));
                 safeAdd('btn-cancel-task', () => this.toggleTaskModal(false));
-
                 safeAdd('btn-cancel-delete', () => this.toggleConfirmationModal(false));
                 safeAdd('btn-confirm-delete', () => this.confirmDelete());
-                safeAdd('btn-clear-data', () => this.clearData());
-
+                safeAdd('btn-logout', () => { localStorage.removeItem('flujo_custom_id'); location.reload(); });
                 safeAdd('btn-close-cal-modal', () => document.getElementById('cal-task-modal').style.display='none');
                 safeAdd('btn-close-cal-modal-action', () => document.getElementById('cal-task-modal').style.display='none');
                 safeAdd('btn-close-db-modal', () => document.getElementById('dashboard-detail-modal').style.display='none');
-
                 safeAdd('btn-ai-suggest', () => this.suggestTasksWithAI());
                 safeAdd('btn-ai-improve', () => this.improveTaskDescription());
-                
-                safeAdd('btn-edit-id', () => {
-                    const newId = prompt("Ingresa el ID de usuario para cargar sus datos:", this.userId);
-                    if(newId && newId.trim() !== "") this.updateUserId(newId.trim());
-                });
-
-                safeAdd('display-user-id', () => {
-                    navigator.clipboard.writeText(this.userId).then(() => alert("ID copiado"));
-                });
-
-                safeAdd('btn-load-user-data', () => {
-                    const input = document.getElementById('input-load-id');
-                    if(input && input.value.trim() !== "") {
-                        this.updateUserId(input.value.trim());
-                        alert("Cargando datos...");
-                    }
-                });
-
+                safeAdd('btn-edit-id', () => { const newId = prompt("Ingresa ID:", this.userId); if(newId) this.updateUserId(newId.trim()); });
+                safeAdd('display-user-id', () => { navigator.clipboard.writeText(this.userId).then(() => alert("Copiado")); });
+                safeAdd('btn-load-user-data', () => { const i = document.getElementById('input-load-id'); if(i && i.value) this.updateUserId(i.value.trim()); });
                 safeAdd('card-projects', () => this.openDashboardDetail('projects'));
                 safeAdd('card-today', () => this.openDashboardDetail('today'));
                 safeAdd('card-completed', () => this.openDashboardDetail('completed'));
+                safeAdd('btn-clear-data', () => this.clearData());
 
                 const searchInput = document.getElementById('db-modal-search');
                 if(searchInput) {
                     searchInput.addEventListener('click', () => this.toggleDropdown(true));
                     searchInput.addEventListener('keyup', () => this.filterDropdownOptions());
                 }
-
                 window.addEventListener('click', (e) => {
                     const wrapper = document.querySelector('.custom-select-wrapper');
                     if(wrapper && !wrapper.contains(e.target)) this.toggleDropdown(false);
                     if (e.target.classList.contains('modal-overlay')) e.target.style.display = 'none';
                 });
             },
-
             updateUserId(newId) {
-                this.userId = newId;
-                localStorage.setItem('flujo_custom_id', newId);
-                this.renderUserId();
-                this.setupFirestoreListener(); 
+                this.userId = newId; localStorage.setItem('flujo_custom_id', newId);
+                this.renderUserId(); this.setupFirestoreListener(); 
             },
-
             renderUserId() {
                 const el = document.getElementById('display-user-id');
-                if(el) el.textContent = `ID: ${this.userId.substring(0, 6)}...`;
-            },
-
-            // --- 4. RENDERERS & LOGIC ---
-            setupDates() {
-                const options = { weekday: 'long', month: 'long', day: 'numeric' };
-                const dateDisplay = document.getElementById('date-display');
-                if (dateDisplay) dateDisplay.textContent = new Date().toLocaleDateString('es-ES', options);
+                if(el && this.userId) el.textContent = `ID: ${this.userId.substring(0, 8)}...`;
             },
             navigate(tabId) {
                 document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
@@ -620,6 +764,43 @@
                 if (tabId === 'calendario') this.renderCalendar();
                 if (tabId === 'analiticas') this.renderAnalytics();
                 setTimeout(() => lucide.createIcons(), 50);
+            },
+            openDashboardDetail(type) {
+                const modalList = document.getElementById('db-modal-list'); const modalTitle = document.getElementById('db-modal-title');
+                const filterSection = document.getElementById('db-modal-filter-section'); const filterSelect = document.getElementById('db-modal-search');
+                modalList.innerHTML = ''; this.currentDashboardListItems = [];
+                filterSelect.value = 'Todos los proyectos'; this.currentFilterValue = 'all';
+                if (type === 'projects') {
+                    modalTitle.textContent = 'Proyectos Activos'; filterSection.style.display = 'none';
+                    this.data.projects.filter(p => p.active).forEach(p => this.currentDashboardListItems.push({ type: 'project', data: p }));
+                } else if (type === 'today') {
+                    modalTitle.textContent = 'Tareas para Hoy'; filterSection.style.display = 'block';
+                    const today = new Date(); today.setHours(0,0,0,0); const projectsSet = new Set();
+                    this.data.projects.forEach(p => {
+                        if (p.active) {
+                            projectsSet.add(p);
+                            p.tasks.forEach(t => {
+                                if (!t.done && t.start && t.end) {
+                                    const start = new Date(t.start); start.setHours(0,0,0,0); const end = new Date(t.end); end.setHours(23,59,59,999);
+                                    if (today >= start && today <= end) this.currentDashboardListItems.push({ type: 'task', data: t, project: p });
+                                }
+                            });
+                        }
+                    });
+                    this.populateCustomOptions(projectsSet);
+                } else if (type === 'completed') {
+                    modalTitle.textContent = 'Tareas Finalizadas'; filterSection.style.display = 'block'; const projectsSet = new Set();
+                    this.data.projects.forEach(p => { p.tasks.forEach(t => { if (t.done) { this.currentDashboardListItems.push({ type: 'task', data: t, project: p }); projectsSet.add(p); } }); });
+                    this.populateCustomOptions(projectsSet);
+                }
+                this.renderDashboardListItems(this.currentDashboardListItems);
+                document.getElementById('dashboard-detail-modal').style.display = 'flex';
+            },
+
+            // --- 4. HELPERS ---
+            hexToRgba(hex, alpha) {
+                const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
             },
             toggleProjectModal(show) {
                 if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -641,10 +822,8 @@
             },
             saveProject(e) {
                 e.preventDefault(); if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-                const name = document.getElementById('p-name').value;
-                const contract = document.getElementById('p-contract').value;
-                const pubs = document.getElementById('p-pubs').value;
-                const isActive = document.getElementById('p-active').checked;
+                const name = document.getElementById('p-name').value; const contract = document.getElementById('p-contract').value;
+                const pubs = document.getElementById('p-pubs').value; const isActive = document.getElementById('p-active').checked;
                 if(!name) { alert("Nombre requerido"); return; }
                 if (this.editingProjectId) {
                     const p = this.data.projects.find(proj => proj.id === this.editingProjectId);
@@ -711,81 +890,11 @@
                 }
                 this.saveData(); this.renderProjects(); this.toggleConfirmationModal(false);
             },
-            openProject(id) {
-                this.currentProjectId = id; const p = this.data.projects.find(proj => proj.id === id);
-                document.getElementById('projects-view-list').style.display = 'none'; document.getElementById('projects-view-detail').style.display = 'block';
-                document.getElementById('detail-title').textContent = p.name; document.getElementById('detail-contract').textContent = p.contractDate || '-';
-                document.getElementById('detail-pubs').textContent = p.pubs; document.getElementById('detail-badge').textContent = p.active ? 'Activo' : 'Inactivo';
-                document.getElementById('detail-badge').className = p.active ? 'badge badge-active' : 'badge badge-inactive';
-                this.renderTasks(p); lucide.createIcons();
-            },
-            closeProject() { this.currentProjectId = null; document.getElementById('projects-view-detail').style.display = 'none'; document.getElementById('projects-view-list').style.display = 'block'; this.renderProjects(); },
-            toggleTaskDone(id) {
-                const p = this.data.projects.find(proj => proj.id === this.currentProjectId);
-                const t = p.tasks.find(tk => tk.id === id);
-                if(t) { t.done = !t.done; this.saveData(); this.renderTasks(p); }
-            },
-            getTaskStatus(t) {
-                if(t.done) return {label:'Finalizado', class:'ts-done'};
-                const now = new Date(), start = new Date(t.start), end = new Date(t.end);
-                if(isNaN(start.getTime()) || isNaN(end.getTime())) return {label:'Pendiente', class:'ts-todo'};
-                if(now < start) return {label:'Pendiente', class:'ts-todo'};
-                if(now > end) return {label:'Sin Publicar', class:'ts-overdue', isOverdue:true};
-                return {label:'En Progreso', class:'ts-progress'};
-            },
-            updateProjectWeeklyStats(p) {
-                const now = new Date(); const currentDay = (now.getDay() + 6) % 7; 
-                const currentWeekStart = new Date(now); currentWeekStart.setDate(now.getDate() - currentDay); currentWeekStart.setHours(0,0,0,0);
-                const currentWeekEnd = new Date(currentWeekStart); currentWeekEnd.setDate(currentWeekStart.getDate() + 6); currentWeekEnd.setHours(23,59,59,999);
-                const prevWeekStart = new Date(currentWeekStart); prevWeekStart.setDate(currentWeekStart.getDate() - 7);
-                const prevWeekEnd = new Date(currentWeekStart); prevWeekEnd.setMilliseconds(prevWeekEnd.getMilliseconds() - 1);
-
-                let currentWeekCount = 0; let prevWeekCount = 0;
-                p.tasks.forEach(t => {
-                    if(t.done && t.end) { 
-                        const tDate = new Date(t.end);
-                        if(tDate >= currentWeekStart && tDate <= currentWeekEnd) currentWeekCount++;
-                        if(tDate >= prevWeekStart && tDate <= prevWeekEnd) prevWeekCount++;
-                    }
-                });
-                const goal = parseInt(p.pubs) || 0; let surplus = 0;
-                if (goal > 0 && prevWeekCount > goal) surplus = prevWeekCount - goal;
-                const totalDisplay = currentWeekCount + surplus;
-                document.getElementById('weekly-count').textContent = totalDisplay;
-                document.getElementById('weekly-total').textContent = `/ ${goal}`;
-                const statusEl = document.getElementById('weekly-status');
-                if(totalDisplay >= goal && goal > 0) { statusEl.textContent = 'Completada'; statusEl.style.color = 'var(--success)'; } 
-                else { statusEl.textContent = 'Sin completar'; statusEl.style.color = 'var(--warning)'; }
-            },
-            openCalendarTaskInfo(pid, tid) {
-                const p = this.data.projects.find(proj => proj.id === pid); const t = p.tasks.find(task => task.id === tid);
-                if(p && t) {
-                    document.getElementById('cal-modal-project').textContent = p.name;
-                    document.getElementById('cal-modal-project').style.backgroundColor = p.color || '#007AFF';
-                    document.getElementById('cal-modal-task').textContent = t.text;
-                    const status = this.getTaskStatus(t);
-                    document.getElementById('cal-modal-status').innerHTML = `<span class="task-status-badge ${status.class}">${status.label}</span>`;
-                    const startFmt = t.start ? new Date(t.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha';
-                    const endFmt = t.end ? new Date(t.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha';
-                    document.getElementById('cal-modal-start').textContent = startFmt;
-                    document.getElementById('cal-modal-end').textContent = endFmt;
-                    document.getElementById('cal-task-modal').style.display = 'flex';
-                }
-            },
             clearData() { 
                 this.pendingDelete = { type: 'reset' };
                 document.getElementById('conf-modal-title').textContent = '¿Reiniciar Aplicación?';
                 document.getElementById('conf-modal-msg').textContent = 'Se borrarán todos los proyectos y tareas. Esta acción es irreversible.';
                 this.toggleConfirmationModal(true);
-            },
-            renderColorPicker() {
-                const container = document.getElementById('color-picker'); container.innerHTML = '';
-                this.colors.forEach(c => {
-                    const div = document.createElement('div'); div.className = 'color-option'; div.style.backgroundColor = c;
-                    if(c === this.selectedColor) div.classList.add('selected');
-                    div.onclick = () => { this.selectedColor = c; this.renderColorPicker(); };
-                    container.appendChild(div);
-                });
             },
             selectProjectFilter(id, name) {
                 document.getElementById('db-modal-search').value = name; this.currentFilterValue = id;
@@ -836,152 +945,7 @@
                 });
             },
             
-            // --- RENDER FUNCTIONS (Restored) ---
-            renderDashboard() {
-                if(!this.data || !this.data.projects) return;
-                const activeProjects = this.data.projects.filter(p => p.active);
-                let tasksTodayCount = 0; let tasksDoneCount = 0;
-                const today = new Date(); today.setHours(0,0,0,0);
-
-                this.data.projects.forEach(p => {
-                    p.tasks.forEach(t => {
-                        if(t.done) tasksDoneCount++;
-                        if (!t.done && t.start && t.end) {
-                            const start = new Date(t.start); start.setHours(0,0,0,0);
-                            const end = new Date(t.end); end.setHours(23,59,59,999);
-                            if (today >= start && today <= end) tasksTodayCount++;
-                        }
-                    });
-                });
-
-                document.getElementById('dash-total').textContent = activeProjects.length;
-                document.getElementById('dash-today').textContent = tasksTodayCount;
-                document.getElementById('dash-done').textContent = tasksDoneCount;
-                
-                const list = document.getElementById('recent-activity-list');
-                if (this.data.projects.length > 0) {
-                    const last = this.data.projects[this.data.projects.length - 1];
-                    const pColor = last.color || '#007AFF';
-                    list.innerHTML = `<div style="padding:15px; border-radius:16px; background:#F2F2F7; display:flex; align-items:center; gap:15px;"><div style="width:40px; height:40px; background:${this.hexToRgba(pColor,0.1)}; border-radius:10px; display:flex; align-items:center; justify-content:center; color:${pColor}; box-shadow:0 2px 5px rgba(0,0,0,0.05);"><i data-lucide="zap" style="width: 20px;"></i></div><div><div style="font-weight:600; color:var(--text-main); margin-bottom:2px;">${last.name}</div><div style="font-size:0.85rem; color:var(--text-secondary);">Creado recientemente • ${last.pubs} pubs/sem</div></div></div>`;
-                } else {
-                    list.innerHTML = '<div style="text-align:center; padding:1rem; color:var(--text-tertiary);">Sin actividad reciente.</div>';
-                }
-                lucide.createIcons();
-            },
-
-            renderProjects() {
-                const list = document.getElementById('project-list'); list.innerHTML = '';
-                if (!this.data.projects || this.data.projects.length === 0) {
-                    list.innerHTML = `<div class="empty-state"><i data-lucide="folder-dashed" style="width:48px;height:48px;"></i><p>Sin proyectos</p><button class="btn btn-ghost" id="btn-create-empty">Crear uno</button></div>`;
-                    const btn = document.getElementById('btn-create-empty');
-                    if(btn) btn.addEventListener('click', () => this.openCreateProjectModal());
-                    lucide.createIcons(); return;
-                }
-                this.data.projects.forEach(p => {
-                    const div = document.createElement('div'); div.className = 'project-item';
-                    div.onclick = () => this.openProject(p.id);
-                    const pColor = p.color || '#007AFF'; const activeClass = p.active ? 'dot-active' : 'dot-inactive';
-                    div.innerHTML = `<div class="project-info-left"><div class="project-icon-box" style="background:${this.hexToRgba(pColor,0.1)}; color:${pColor};"><i data-lucide="folder" style="width:20px;"></i></div><div><div style="display:flex;align-items:center;margin-bottom:4px;"><span class="status-dot ${activeClass}"></span><h3 style="font-size:1rem;font-weight:600;">${p.name}</h3></div><div style="color:var(--text-secondary);font-size:0.85rem;">${p.pubs} pubs/sem</div></div></div><div style="display:flex;align-items:center;gap:20px;"><div style="text-align:right;"><div style="font-size:0.7rem;font-weight:700;color:var(--text-tertiary);">TAREAS</div><div style="font-size:0.9rem;font-weight:600;">${p.tasks.filter(t=>t.done).length}/${p.tasks.length}</div></div><button class="btn-ghost danger delete-btn"><i data-lucide="trash-2" style="width:18px;"></i></button><i data-lucide="chevron-right" style="color:#D2D2D7; width: 20px;"></i></div>`;
-                    
-                    div.addEventListener('click', () => this.openProject(p.id));
-                    const delBtn = div.querySelector('.delete-btn');
-                    delBtn.addEventListener('click', (e) => this.deleteProject(e, p.id));
-                    
-                    list.appendChild(div);
-                });
-                lucide.createIcons();
-            },
-
-            renderTasks(p) {
-                this.updateProjectWeeklyStats(p);
-                const ui = document.getElementById('task-list-ui'); ui.innerHTML = '';
-                const total = p.tasks.length; const done = p.tasks.filter(t => t.done).length;
-                const percent = total === 0 ? 0 : Math.round((done/total)*100);
-                document.getElementById('detail-percent').textContent = `${percent}%`;
-                document.getElementById('detail-bar').style.width = `${percent}%`;
-
-                if(total===0) { ui.innerHTML = `<div class="empty-state" style="padding:2rem;"><p>Sin tareas</p></div>`; return; }
-
-                p.tasks.forEach(t => {
-                    const status = this.getTaskStatus(t);
-                    let startDate = 'Sin fecha', endDate = 'Sin fecha';
-                    if (t.start && !isNaN(new Date(t.start).getTime())) startDate = new Date(t.start).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
-                    if (t.end && !isNaN(new Date(t.end).getTime())) endDate = new Date(t.end).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
-                    const li = document.createElement('li'); li.className = 'task-item-ui';
-                    li.innerHTML = `<div class="checkbox-wrapper" style="cursor:pointer;"><input type="checkbox" class="ios-checkbox" ${t.done?'checked':''} readonly></div><div style="flex:1;"><div style="display:flex;justify-content:space-between;"><span class="task-text ${t.done?'completed':''}" style="font-weight:600;">${t.text}</span><div style="display:flex;align-items:center;gap:8px;">${status.isOverdue ? `<span style="color:var(--danger);font-size:0.7rem;font-weight:600;display:flex;align-items:center;gap:4px;"><i data-lucide="alert-circle" style="width:14px;"></i> Verificar</span>`:''}<span class="task-status-badge ${status.class}">${status.label}</span></div></div><div style="font-size:0.9rem;color:#555;margin-top:4px;">${t.desc||''}</div><div class="task-meta-row"><span><i data-lucide="clock" style="width:12px;vertical-align:middle;"></i> ${startDate}</span><span><i data-lucide="flag" style="width:12px;vertical-align:middle;"></i> ${endDate}</span></div></div><div style="display:flex;gap:5px;"><button class="btn-ghost edit-task-btn"><i data-lucide="pencil" style="width:16px;color:#007AFF;"></i></button><button class="btn-ghost danger delete-task-btn"><i data-lucide="trash-2" style="width:16px;"></i></button></div>`;
-                    
-                    li.querySelector('.checkbox-wrapper').onclick = () => this.toggleTaskDone(t.id);
-                    li.querySelector('.edit-task-btn').onclick = () => this.openEditTaskModal(t.id);
-                    li.querySelector('.delete-task-btn').onclick = () => this.deleteTask(t.id);
-                    
-                    ui.appendChild(li);
-                });
-                lucide.createIcons();
-            },
-
-            renderCalendar() {
-                const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
-                const now = new Date(), year = now.getFullYear(), month = now.getMonth();
-                document.getElementById('calendar-month-name').textContent = `Mes ${month+1} ${year}`;
-                ['D','L','M','X','J','V','S'].forEach(d => { const h=document.createElement('div'); h.className='cal-header'; h.textContent=d; grid.appendChild(h); });
-                const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month+1, 0).getDate();
-                for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
-                for(let i=1; i<=daysInMonth; i++) {
-                    const cell = document.createElement('div'); cell.className='cal-day'; if(i===now.getDate()) cell.classList.add('today');
-                    cell.innerHTML = `<div class="day-num">${i}</div>`;
-                    const currentDt = new Date(year, month, i); currentDt.setHours(0,0,0,0);
-                    if(this.data.projects) {
-                        this.data.projects.forEach(p => {
-                            if(p.active) p.tasks.forEach(t => {
-                                if(!t.start || !t.end) return;
-                                const start=new Date(t.start); start.setHours(0,0,0,0);
-                                const end=new Date(t.end); end.setHours(0,0,0,0);
-                                if(currentDt >= start && currentDt <= end) {
-                                    const div = document.createElement('div'); div.className = `cal-task-dot ${t.done?'done':''}`;
-                                    const isDeadline = currentDt.getTime() === end.getTime();
-                                    div.innerHTML = `${isDeadline ? '<i data-lucide="flag" style="width:12px;"></i>' : ''} ${t.text}`;
-                                    div.style.color = p.color; div.style.borderLeftColor = p.color; div.style.background = this.hexToRgba(p.color||'#007AFF', 0.1);
-                                    div.onclick = (e) => { e.stopPropagation(); this.openCalendarTaskInfo(p.id, t.id); };
-                                    cell.appendChild(div);
-                                }
-                            });
-                        });
-                    }
-                    grid.appendChild(cell);
-                }
-            },
-
-            renderAnalytics() {
-                const canvas = document.getElementById('statusChart');
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                const total = this.data.projects ? this.data.projects.length : 0;
-                document.getElementById('chart-total').textContent = total;
-                const scale = window.devicePixelRatio || 1;
-                ctx.canvas.width = 220 * scale; ctx.canvas.height = 220 * scale;
-                ctx.canvas.style.width = "220px"; ctx.canvas.style.height = "220px";
-                ctx.scale(scale, scale); ctx.clearRect(0, 0, 220, 220);
-                if(total === 0) {
-                    ctx.beginPath(); ctx.arc(110,110, 85, 0, 2*Math.PI); ctx.strokeStyle = '#F2F2F7'; ctx.lineWidth = 25; ctx.stroke();
-                } else {
-                    const activeCount = this.data.projects.filter(p => p.active).length;
-                    let start = -0.5 * Math.PI; 
-                    const colors = { active: '#34C759', inactive: '#E5E5EA' };
-                    ctx.beginPath(); ctx.arc(110,110, 85, 0, 2*Math.PI); ctx.strokeStyle = '#F2F2F7'; ctx.lineWidth = 25; ctx.stroke();
-                    if(activeCount > 0) {
-                        const slice = (activeCount/total) * 2 * Math.PI;
-                        ctx.beginPath(); ctx.arc(110, 110, 85, start, start+slice); ctx.strokeStyle = colors.active; ctx.lineWidth = 25; ctx.lineCap = 'round'; ctx.stroke();
-                    }
-                }
-                // Global completion
-                let totalTasks = 0, doneTasks = 0;
-                if(this.data.projects) this.data.projects.forEach(p => { if(p.active) { totalTasks += p.tasks.length; doneTasks += p.tasks.filter(t => t.done).length; } });
-                const globalRate = totalTasks === 0 ? 0 : Math.round((doneTasks/totalTasks)*100);
-                document.getElementById('global-completion-rate').textContent = `${globalRate}%`;
-                document.getElementById('global-completion-bar').style.width = `${globalRate}%`;
-            },
-            
-            // --- AI FEATURES ---
+            // --- 5. AI & NOTIFICATIONS ---
             async callGeminiAPI(prompt) {
                 try {
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
@@ -1061,102 +1025,7 @@
                     });
                 }
             },
-
-            // --- Logic helpers ---
-            hexToRgba(hex, alpha) {
-                const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
-                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-            },
-            toggleProjectModal(show) {
-                if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-                const modal = document.getElementById('project-modal'); modal.style.display = show ? 'flex' : 'none';
-                if(!show) this.editingProjectId = null;
-            },
-            openCreateProjectModal() {
-                this.editingProjectId = null; document.getElementById('project-modal-title').textContent = 'Nuevo Proyecto';
-                const form = document.querySelector('#project-form'); if(form) form.reset();
-                this.selectedColor = '#007AFF'; this.renderColorPicker(); this.toggleProjectModal(true);
-            },
-            openEditProjectModal() {
-                if(!this.currentProjectId) return;
-                const p = this.data.projects.find(proj => proj.id === this.currentProjectId); if(!p) return;
-                this.editingProjectId = p.id; document.getElementById('project-modal-title').textContent = 'Editar Proyecto';
-                document.getElementById('p-name').value = p.name; document.getElementById('p-contract').value = p.contractDate;
-                document.getElementById('p-pubs').value = p.pubs; document.getElementById('p-active').checked = p.active;
-                this.selectedColor = p.color || '#007AFF'; this.renderColorPicker(); this.toggleProjectModal(true);
-            },
-            saveProject(e) {
-                e.preventDefault(); if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-                const name = document.getElementById('p-name').value;
-                const contract = document.getElementById('p-contract').value;
-                const pubs = document.getElementById('p-pubs').value;
-                const isActive = document.getElementById('p-active').checked;
-                if(!name) { alert("Nombre requerido"); return; }
-                if (this.editingProjectId) {
-                    const p = this.data.projects.find(proj => proj.id === this.editingProjectId);
-                    if(p) { p.name = name; p.contractDate = contract; p.pubs = pubs; p.active = isActive; p.color = this.selectedColor;
-                        if(this.currentProjectId === p.id) { document.getElementById('detail-title').textContent = p.name; this.updateProjectWeeklyStats(p); }
-                    }
-                } else {
-                    this.data.projects.push({ id: Date.now(), name, date: new Date().toISOString().split('T')[0], contractDate: contract, active: isActive, pubs, color: this.selectedColor, tasks: [] });
-                    this.sendNotification("Proyecto Creado", name);
-                }
-                this.saveData(); this.toggleProjectModal(false); this.renderProjects();
-            },
-            toggleTaskModal(show) {
-                if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-                const modal = document.getElementById('task-modal');
-                if(show) modal.style.display = 'flex'; else setTimeout(() => { modal.style.display = 'none'; this.editingTaskId = null; }, 10);
-            },
-            openCreateTaskModal() {
-                this.editingTaskId = null; document.getElementById('task-modal-title').textContent = 'Nueva Tarea';
-                const form = document.querySelector('#task-form'); if(form) form.reset();
-                const now = new Date(); const tzOffset = now.getTimezoneOffset() * 60000;
-                const nowStr = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16);
-                document.getElementById('t-start').value = nowStr; document.getElementById('t-end').value = nowStr;
-                this.toggleTaskModal(true);
-            },
-            openEditTaskModal(taskId) {
-                const p = this.data.projects.find(proj => proj.id === this.currentProjectId); const task = p.tasks.find(t => t.id === taskId);
-                if(!task) return; this.editingTaskId = taskId;
-                document.getElementById('task-modal-title').textContent = 'Editar Tarea';
-                document.getElementById('t-name').value = task.text; document.getElementById('t-desc').value = task.desc;
-                document.getElementById('t-start').value = task.start; document.getElementById('t-end').value = task.end;
-                this.toggleTaskModal(true);
-            },
-            saveTask(e) {
-                e.preventDefault(); if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-                if (!this.currentProjectId) return;
-                const name = document.getElementById('t-name').value; const desc = document.getElementById('t-desc').value;
-                const start = document.getElementById('t-start').value; const end = document.getElementById('t-end').value;
-                if(!name || !start || !end) { alert("Completa los campos"); return; }
-                const p = this.data.projects.find(proj => proj.id === this.currentProjectId);
-                if (this.editingTaskId) {
-                    const task = p.tasks.find(t => t.id === this.editingTaskId);
-                    if(task) { task.text = name; task.desc = desc; task.start = start; task.end = end; task.notifiedStart = false; task.notifiedLastDay = false; }
-                } else {
-                    p.tasks.push({ id: Date.now(), text: name, desc, start, end, done: false });
-                    this.sendNotification("Nueva Tarea", name);
-                }
-                this.saveData(); this.toggleTaskModal(false); this.renderTasks(p);
-            },
-            toggleConfirmationModal(show) { const modal = document.getElementById('confirmation-modal'); modal.style.display = show ? 'flex' : 'none'; if (!show) this.pendingDelete = null; },
-            deleteProject(e, id) { e.stopPropagation(); this.pendingDelete = { type: 'project', id }; document.getElementById('conf-modal-title').textContent = '¿Eliminar Proyecto?'; document.getElementById('conf-modal-msg').textContent = 'Se perderán todas las tareas.'; this.toggleConfirmationModal(true); },
-            deleteTask(taskId) { this.pendingDelete = { type: 'task', id: taskId }; document.getElementById('conf-modal-title').textContent = '¿Eliminar Tarea?'; document.getElementById('conf-modal-msg').textContent = 'Se eliminará permanentemente.'; this.toggleConfirmationModal(true); },
-            async confirmDelete() {
-                if (!this.pendingDelete) return;
-                if (this.pendingDelete.type === 'reset') {
-                     this.data.projects = []; await this.saveData(); location.reload(); return;
-                }
-                if (this.pendingDelete.type === 'project') {
-                    this.data.projects = this.data.projects.filter(p => p.id !== this.pendingDelete.id);
-                    if (this.currentProjectId === this.pendingDelete.id) this.closeProject();
-                } else {
-                    const p = this.data.projects.find(proj => proj.id === this.currentProjectId);
-                    if (p) { p.tasks = p.tasks.filter(t => t.id !== this.pendingDelete.id); this.renderTasks(p); }
-                }
-                this.saveData(); this.renderProjects(); this.toggleConfirmationModal(false);
-            },
+            // --- OTHER UTILS ---
             openProject(id) {
                 this.currentProjectId = id; const p = this.data.projects.find(proj => proj.id === id);
                 document.getElementById('projects-view-list').style.display = 'none'; document.getElementById('projects-view-detail').style.display = 'block';
@@ -1185,7 +1054,6 @@
                 const currentWeekEnd = new Date(currentWeekStart); currentWeekEnd.setDate(currentWeekStart.getDate() + 6); currentWeekEnd.setHours(23,59,59,999);
                 const prevWeekStart = new Date(currentWeekStart); prevWeekStart.setDate(currentWeekStart.getDate() - 7);
                 const prevWeekEnd = new Date(currentWeekStart); prevWeekEnd.setMilliseconds(prevWeekEnd.getMilliseconds() - 1);
-
                 let currentWeekCount = 0; let prevWeekCount = 0;
                 p.tasks.forEach(t => {
                     if(t.done && t.end) { 
@@ -1217,111 +1085,6 @@
                     document.getElementById('cal-modal-end').textContent = endFmt;
                     document.getElementById('cal-task-modal').style.display = 'flex';
                 }
-            },
-            clearData() { 
-                this.pendingDelete = { type: 'reset' };
-                document.getElementById('conf-modal-title').textContent = '¿Reiniciar Aplicación?';
-                document.getElementById('conf-modal-msg').textContent = 'Se borrarán todos los proyectos y tareas. Esta acción es irreversible.';
-                this.toggleConfirmationModal(true);
-            },
-            renderColorPicker() {
-                const container = document.getElementById('color-picker'); container.innerHTML = '';
-                this.colors.forEach(c => {
-                    const div = document.createElement('div'); div.className = 'color-option'; div.style.backgroundColor = c;
-                    if(c === this.selectedColor) div.classList.add('selected');
-                    div.onclick = () => { this.selectedColor = c; this.renderColorPicker(); };
-                    container.appendChild(div);
-                });
-            },
-            selectProjectFilter(id, name) {
-                document.getElementById('db-modal-search').value = name; this.currentFilterValue = id;
-                this.toggleDropdown(false); this.renderFilteredList();
-            },
-            toggleDropdown(show) {
-                const list = document.getElementById('db-custom-options');
-                if(show) { list.classList.add('show'); document.getElementById('db-modal-search').focus(); } else list.classList.remove('show');
-            },
-            filterDropdownOptions() {
-                const input = document.getElementById('db-modal-search'); const filter = input.value.toLowerCase();
-                const options = document.getElementsByClassName('custom-option');
-                for (let i = 0; i < options.length; i++) {
-                    const txtValue = options[i].textContent || options[i].innerText;
-                    options[i].style.display = txtValue.toLowerCase().indexOf(filter) > -1 ? "" : "none";
-                }
-            },
-            renderFilteredList() {
-                if (this.currentFilterValue === 'all') this.renderDashboardListItems(this.currentDashboardListItems);
-                else {
-                    const filtered = this.currentDashboardListItems.filter(item => item.project && item.project.id == this.currentFilterValue);
-                    this.renderDashboardListItems(filtered);
-                }
-            },
-            renderDashboardListItems(items) {
-                const container = document.getElementById('db-modal-list'); container.innerHTML = '';
-                if (items.length === 0) { container.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-secondary);">No se encontraron elementos.</div>'; return; }
-                items.forEach(item => {
-                    const div = document.createElement('div'); div.className = 'dashboard-list-item';
-                    if (item.type === 'project') {
-                        const p = item.data; const pColor = p.color || '#007AFF';
-                        div.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><div style="width:10px; height:10px; border-radius:50%; background:${pColor};"></div><span class="dashboard-task-name">${p.name}</span></div><div style="font-size:0.8rem; color:var(--text-secondary);">${p.pubs} pubs/sem</div>`;
-                    } else {
-                        const t = item.data; const p = item.project; const pColor = p.color || '#007AFF';
-                        div.innerHTML = `<div style="display:flex; flex-direction:column;"><span class="dashboard-task-name">${t.text}</span><span style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">${new Date(t.end).toLocaleDateString()}</span></div><div class="dashboard-proj-tag" style="background:${pColor};">${p.name}</div>`;
-                    }
-                    container.appendChild(div);
-                });
-            },
-            populateCustomOptions(set) {
-                const container = document.getElementById('db-custom-options'); container.innerHTML = '';
-                const allOpt = document.createElement('div'); allOpt.className = 'custom-option'; allOpt.textContent = 'Todos los proyectos';
-                allOpt.onclick = () => this.selectProjectFilter('all', 'Todos los proyectos'); container.appendChild(allOpt);
-                set.forEach(p => {
-                    const opt = document.createElement('div'); opt.className = 'custom-option';
-                    opt.innerHTML = `<div style="width:8px; height:8px; border-radius:50%; background:${p.color||'#ccc'};"></div>${p.name}`;
-                    opt.onclick = () => this.selectProjectFilter(p.id, p.name); container.appendChild(opt);
-                });
-            },
-            
-            // --- RESTORED FUNCTION ---
-            openDashboardDetail(type) {
-                const modalList = document.getElementById('db-modal-list'); const modalTitle = document.getElementById('db-modal-title');
-                const filterSection = document.getElementById('db-modal-filter-section'); const filterSelect = document.getElementById('db-modal-search');
-                
-                modalList.innerHTML = ''; this.currentDashboardListItems = [];
-                filterSelect.value = 'Todos los proyectos'; this.currentFilterValue = 'all';
-
-                if (type === 'projects') {
-                    modalTitle.textContent = 'Proyectos Activos'; filterSection.style.display = 'none';
-                    this.data.projects.filter(p => p.active).forEach(p => this.currentDashboardListItems.push({ type: 'project', data: p }));
-                } else if (type === 'today') {
-                    modalTitle.textContent = 'Tareas para Hoy'; filterSection.style.display = 'block';
-                    const today = new Date(); today.setHours(0,0,0,0);
-                    const projectsSet = new Set();
-                    this.data.projects.forEach(p => {
-                        if (p.active) {
-                            projectsSet.add(p);
-                            p.tasks.forEach(t => {
-                                if (!t.done && t.start && t.end) {
-                                    const start = new Date(t.start); start.setHours(0,0,0,0);
-                                    const end = new Date(t.end); end.setHours(23,59,59,999);
-                                    if (today >= start && today <= end) this.currentDashboardListItems.push({ type: 'task', data: t, project: p });
-                                }
-                            });
-                        }
-                    });
-                    this.populateCustomOptions(projectsSet);
-                } else if (type === 'completed') {
-                    modalTitle.textContent = 'Tareas Finalizadas'; filterSection.style.display = 'block';
-                    const projectsSet = new Set();
-                    this.data.projects.forEach(p => {
-                        p.tasks.forEach(t => {
-                            if (t.done) { this.currentDashboardListItems.push({ type: 'task', data: t, project: p }); projectsSet.add(p); }
-                        });
-                    });
-                    this.populateCustomOptions(projectsSet);
-                }
-                this.renderDashboardListItems(this.currentDashboardListItems);
-                document.getElementById('dashboard-detail-modal').style.display = 'flex';
             }
         };
 
