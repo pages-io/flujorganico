@@ -2,9 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- Viewport estándar para web responsive -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>flujo Orgánico</title>
+    <title>Flujo Orgánico</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -25,8 +24,8 @@
             background-color: var(--bg-body); 
             color: var(--text-main); 
             display: flex; 
-            height: 100vh; /* Desktop: Fixed height container */
-            overflow: hidden; /* Desktop: Scroll inside main-content */
+            height: 100vh; 
+            overflow: hidden; 
         }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -143,19 +142,9 @@
         .cal-task-dot:hover { transform: scale(1.02); opacity: 0.9; }
         .cal-task-dot.done { text-decoration: line-through; opacity: 0.6; }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: flex-start; z-index: 1000; padding-top: 10vh; overflow-y: auto; }
-        .modal-content { background: white; padding: 2.5rem; border-radius: var(--radius-lg); width: 90%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); transform: scale(0.98); animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; margin-bottom: 5vh; overflow-y: auto; max-height: 85vh; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 1000; overflow-y: auto; padding-top: 0; }
+        .modal-content { background: white; padding: 2.5rem; border-radius: var(--radius-lg); width: 90%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); transform: scale(0.98); animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; margin: 20px auto; max-height: 85vh; overflow-y: auto; }
         @keyframes popIn { to {transform: scale(1); opacity: 1;} }
-        
-        .info-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 4px; letter-spacing: 0.05em; }
-        .info-value { font-size: 1rem; color: var(--text-main); margin-bottom: 16px; font-weight: 500; }
-        .project-chip { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; color: white; }
-        
-        .dashboard-list-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 10px; border-bottom: 1px solid var(--border); transition: background 0.1s; border-radius: 8px; }
-        .dashboard-list-item:hover { background: #FAFAFA; }
-        .dashboard-list-item:last-child { border-bottom: none; }
-        .dashboard-task-name { font-weight: 500; color: var(--text-main); }
-        .dashboard-proj-tag { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; color: white; margin-left: 10px; text-transform: uppercase; letter-spacing: 0.02em; }
         
         /* LOGIN OVERLAY */
         #login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #F5F5F7; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
@@ -171,16 +160,13 @@
 
         /* RESPONSIVE */
         @media (max-width: 768px) {
-            /* Web-like scrolling on body for mobile */
             body { 
                 flex-direction: column; 
                 height: auto; 
                 min-height: 100vh;
                 overflow-y: auto; 
-                -webkit-overflow-scrolling: touch; 
             }
             .sidebar { 
-                /* Native web layout: Top Bar */
                 position: sticky; top: 0; left: 0; right: 0; 
                 width: 100%; height: auto; 
                 flex-direction: row; padding: 10px; 
@@ -199,7 +185,7 @@
                 margin-right: 10px;
                 flex-shrink: 0;
             }
-            .brand span { display: none; } /* Hide Text, keep Icon */
+            .brand span { display: none; } 
             
             .nav-links { 
                 flex-direction: row; 
@@ -214,7 +200,7 @@
                 padding: 8px 12px; 
                 font-size: 0.8rem; 
                 white-space: nowrap;
-                background: #F2F2F7; /* Slight bg for buttons on mobile */
+                background: #F2F2F7;
             }
             .nav-item.active {
                 background: var(--primary);
@@ -223,7 +209,6 @@
             .nav-item i { width: 18px; height: 18px; margin-bottom: 0; }
             .user-id-container { display: none; }
             
-            /* Main Content Scrolling Fix */
             .main-content { 
                 padding: 1.5rem; 
                 padding-top: 20px;
@@ -234,12 +219,7 @@
             
             .modal-content { 
                 width: 95%; max-width: none; border-radius: 24px; 
-                margin-top: 20px; margin-bottom: 20px; /* Space for scrolling */
-            }
-            /* Ensure modals center properly on scrollable page */
-            .modal-overlay {
-                align-items: center;
-                padding-top: 0;
+                margin: 20px auto;
             }
 
             .project-item { flex-direction: column; align-items: flex-start; gap: 15px; }
@@ -271,6 +251,7 @@
             <li class="nav-item" data-tab="analiticas"><i data-lucide="pie-chart"></i><span>Reportes</span></li>
             <li class="nav-item" data-tab="configuracion"><i data-lucide="settings"></i><span>Ajustes</span></li>
         </ul>
+        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center; display: none;">v48.0 Stable Auth</div>
     </nav>
 
     <main class="main-content">
@@ -562,7 +543,6 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'administrador-proyectos-main';
 
         const app = {
-            // STATE
             data: { projects: [], activityLog: [] },
             currentProjectId: null,
             editingProjectId: null,
@@ -579,14 +559,84 @@
             listenerUnsubscribe: null,
             colors: ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#8E8E93'],
 
-            // --- 1. INITIALIZATION & CORE ---
+            // 1. HELPERS & UTILS
+            sendNotification(title, body) {
+                try {
+                    if ("Notification" in window && Notification.permission === "granted") {
+                        try {
+                            new Notification(title, { body, icon: 'https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/bell.svg' });
+                        } catch (e) { console.log("Notification prevented on mobile"); }
+                    }
+                } catch (e) { console.log("Notification API error", e); }
+            },
+            
+            checkNotificationTriggers() {
+                const now = new Date(); const currentHour = now.getHours();
+                if (currentHour >= 8 && currentHour <= 20) {
+                    const lastReminder = localStorage.getItem('last_periodic_reminder');
+                    const fourHours = 4 * 60 * 60 * 1000;
+                    if (!lastReminder || (now.getTime() - parseInt(lastReminder)) > fourHours) {
+                        app.sendNotification("Recordatorio", "Revisa el estado de tus tareas.");
+                        localStorage.setItem('last_periodic_reminder', now.getTime());
+                    }
+                }
+                if(app.data && app.data.projects) {
+                    app.data.projects.forEach(p => {
+                        if (!p.active) return;
+                        p.tasks.forEach(t => {
+                            if (t.done) return;
+                            const start = t.start ? new Date(t.start) : null;
+                            const end = t.end ? new Date(t.end) : null;
+                            if (start && now >= start && !t.notifiedStart) {
+                                app.sendNotification("Tarea Iniciada", `"${t.text}" ha comenzado.`);
+                                t.notifiedStart = true; app.saveData(); 
+                            }
+                            if (end) {
+                                const isToday = end.getDate() === now.getDate() && end.getMonth() === now.getMonth();
+                                if (isToday && !t.notifiedLastDay) {
+                                    app.sendNotification("Último Día", `"${t.text}" vence hoy.`);
+                                    t.notifiedLastDay = true; app.saveData();
+                                }
+                                if (now > end && !t.notifiedOverdue) {
+                                    app.sendNotification("Vencida", `"${t.text}" ha expirado.`);
+                                    t.notifiedOverdue = true; app.saveData();
+                                }
+                            }
+                        });
+                    });
+                }
+            },
+
+            logActivity(text) {
+                if (!app.data.activityLog) app.data.activityLog = [];
+                const now = new Date();
+                app.data.activityLog.unshift({ text, date: now.toISOString() });
+                if (app.data.activityLog.length > 20) app.data.activityLog.pop();
+            },
+
+            updateUserId(newId) {
+                app.userId = newId;
+                localStorage.setItem('flujo_custom_id', newId);
+                app.renderUserId();
+                app.setupFirestoreListener(); 
+            },
+
+            renderUserId() {
+                const el = document.getElementById('settings-user-id');
+                if(el && app.userId) el.textContent = app.userId;
+            },
+
+            // 2. INIT & DATA
             async init() {
                 try {
                     const firebaseApp = initializeApp(firebaseConfig);
                     app.auth = getAuth(firebaseApp);
                     app.db = getFirestore(firebaseApp);
 
-                    await signInAnonymously(app.auth);
+                    try {
+                        // Attempt fallback logic for auth
+                         await signInAnonymously(app.auth);
+                    } catch(err) { console.error("Auth error", err); }
 
                     onAuthStateChanged(app.auth, (user) => {
                         if (user) {
@@ -606,6 +656,7 @@
                     app.setupDates();
                     app.setupEventListeners();
                     app.renderColorPicker();
+                    // Initial Safe Render
                     app.renderDashboard(); 
                     app.renderProjects();
                     
@@ -628,6 +679,7 @@
                 app.listenerUnsubscribe = onSnapshot(docRef, (docSnap) => {
                     if (docSnap.exists()) {
                         app.data = docSnap.data();
+                        // Fix undefined arrays if fresh data
                         if (!app.data.projects) app.data.projects = [];
                         if (!app.data.activityLog) app.data.activityLog = [];
                         
@@ -653,7 +705,7 @@
                 return setDoc(docRef, app.data);
             },
 
-            // --- 2. RENDERERS ---
+            // 3. RENDERERS
             renderColorPicker() {
                 const container = document.getElementById('color-picker'); 
                 if (!container) return;
@@ -814,8 +866,8 @@
                 document.getElementById('global-completion-rate').textContent = `${globalRate}%`;
                 document.getElementById('global-completion-bar').style.width = `${globalRate}%`;
             },
-            
-            // --- 4. EVENT LISTENERS ---
+
+            // --- 3. EVENT LISTENERS ---
             setupEventListeners() {
                 document.querySelectorAll('.nav-item').forEach(item => {
                     item.addEventListener('click', () => {
@@ -829,6 +881,7 @@
                     if(el) el.addEventListener('click', fn);
                 };
 
+                // Login
                 safeAdd('btn-login-action', () => {
                     const input = document.getElementById('login-id-input');
                     if (input && input.value.trim() !== '') {
@@ -858,7 +911,11 @@
                 safeAdd('btn-ai-suggest', () => app.suggestTasksWithAI());
                 safeAdd('btn-ai-improve', () => app.improveTaskDescription());
                 
-                safeAdd('btn-change-profile-name', () => { app.openProfileModal(); });
+                safeAdd('btn-change-profile-name', () => {
+                   app.openProfileModal(); // NOW CALLS MODAL
+                });
+
+                // New Profile Modal Buttons
                 safeAdd('btn-cancel-profile', () => app.toggleProfileModal(false));
                 safeAdd('btn-save-profile', () => app.saveProfileId());
 
@@ -880,7 +937,7 @@
                 });
             },
 
-            // --- 5. HELPERS ---
+            // --- 4. HELPERS ---
             updateUserId(newId) {
                 app.userId = newId;
                 localStorage.setItem('flujo_custom_id', newId);
@@ -904,6 +961,7 @@
                 const idx = tabs.indexOf(tabId);
                 if(idx !== -1) document.querySelectorAll('.nav-item')[idx].classList.add('active');
                 
+                // Fix View State logic
                 if (tabId === 'proyectos') {
                     if (app.currentProjectId) {
                         document.getElementById('projects-view-list').style.display = 'none';
@@ -913,6 +971,7 @@
                         document.getElementById('projects-view-detail').style.display = 'none';
                     }
                 } else {
+                    // Force reset project view when leaving tab
                     app.currentProjectId = null;
                     document.getElementById('projects-view-detail').style.display = 'none';
                     document.getElementById('projects-view-list').style.display = 'block';
@@ -945,9 +1004,12 @@
                 app.selectedColor = p.color || '#007AFF'; app.renderColorPicker(); app.toggleProjectModal(true);
             },
             
+            // --- 5. LOGIC FUNCTIONS ---
+            
             async saveProject(e) {
                 if (e) e.preventDefault(); if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
                 
+                // Ensure data structure exists
                 if (!app.data.projects) app.data.projects = [];
                 
                 const name = document.getElementById('p-name').value;
@@ -1171,6 +1233,15 @@
                      alert("El ID no puede estar vacío");
                 }
             },
+            
+            // --- RESTORED FUNCTIONS ---
+            clearData() { 
+                app.pendingDelete = { type: 'reset' };
+                document.getElementById('conf-modal-title').textContent = '¿Reiniciar Aplicación?';
+                document.getElementById('conf-modal-msg').textContent = 'Se borrarán todos los proyectos y tareas. Esta acción es irreversible.';
+                app.toggleConfirmationModal(true);
+            },
+
             openDashboardDetail(type) {
                 const modalList = document.getElementById('db-modal-list'); const modalTitle = document.getElementById('db-modal-title');
                 const filterSection = document.getElementById('db-modal-filter-section'); const filterSelect = document.getElementById('db-modal-search');
@@ -1211,10 +1282,63 @@
                 app.renderDashboardListItems(app.currentDashboardListItems);
                 document.getElementById('dashboard-detail-modal').style.display = 'flex';
             },
+
+            renderDashboardListItems(items) {
+                const container = document.getElementById('db-modal-list'); container.innerHTML = '';
+                if (items.length === 0) { container.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-secondary);">No se encontraron elementos.</div>'; return; }
+                items.forEach(item => {
+                    const div = document.createElement('div'); div.className = 'dashboard-list-item';
+                    if (item.type === 'project') {
+                        const p = item.data; const pColor = p.color || '#007AFF';
+                        div.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><div style="width:10px; height:10px; border-radius:50%; background:${pColor};"></div><span class="dashboard-task-name">${p.name}</span></div><div style="font-size:0.8rem; color:var(--text-secondary);">${p.pubs} pubs/sem</div>`;
+                    } else {
+                        const t = item.data; const p = item.project; const pColor = p.color || '#007AFF';
+                        div.innerHTML = `<div style="display:flex; flex-direction:column;"><span class="dashboard-task-name">${t.text}</span><span style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">${new Date(t.end).toLocaleDateString()}</span></div><div class="dashboard-proj-tag" style="background:${pColor};">${p.name}</div>`;
+                    }
+                    container.appendChild(div);
+                });
+            },
+
+            populateCustomOptions(set) {
+                const container = document.getElementById('db-custom-options'); container.innerHTML = '';
+                const allOpt = document.createElement('div'); allOpt.className = 'custom-option'; allOpt.textContent = 'Todos los proyectos';
+                allOpt.onclick = () => app.selectProjectFilter('all', 'Todos los proyectos'); container.appendChild(allOpt);
+                set.forEach(p => {
+                    const opt = document.createElement('div'); opt.className = 'custom-option';
+                    opt.innerHTML = `<div style="width:8px; height:8px; border-radius:50%; background:${p.color||'#ccc'};"></div>${p.name}`;
+                    opt.onclick = () => app.selectProjectFilter(p.id, p.name); container.appendChild(opt);
+                });
+            },
+
+            selectProjectFilter(id, name) {
+                document.getElementById('db-modal-search').value = name; 
+                app.currentFilterValue = id;
+                app.toggleDropdown(false); 
+                app.renderFilteredList();
+            },
+
+            filterDropdownOptions() {
+                const input = document.getElementById('db-modal-search'); const filter = input.value.toLowerCase();
+                const options = document.getElementsByClassName('custom-option');
+                for (let i = 0; i < options.length; i++) {
+                    const txtValue = options[i].textContent || options[i].innerText;
+                    options[i].style.display = txtValue.toLowerCase().indexOf(filter) > -1 ? "" : "none";
+                }
+            },
+
+            renderFilteredList() {
+                if (app.currentFilterValue === 'all') app.renderDashboardListItems(app.currentDashboardListItems);
+                else {
+                    const filtered = app.currentDashboardListItems.filter(item => item.project && item.project.id == app.currentFilterValue);
+                    app.renderDashboardListItems(filtered);
+                }
+            },
+
             toggleDropdown(show) {
                 const list = document.getElementById('db-custom-options');
                 if(show) { list.classList.add('show'); document.getElementById('db-modal-search').focus(); } else list.classList.remove('show');
             },
+            
             async callGeminiAPI(prompt) {
                 try {
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
@@ -1252,47 +1376,6 @@
                 const improved = await app.callGeminiAPI(prompt);
                 if(improved) descInput.value = improved.trim();
                 if(btn) btn.classList.remove('loading');
-            },
-            sendNotification(title, body) {
-                if ("Notification" in window && Notification.permission === "granted") {
-                    new Notification(title, { body, icon: 'https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/bell.svg' });
-                }
-            },
-            checkNotificationTriggers() {
-                const now = new Date(); const currentHour = now.getHours();
-                if (currentHour >= 8 && currentHour <= 20) {
-                    const lastReminder = localStorage.getItem('last_periodic_reminder');
-                    const fourHours = 4 * 60 * 60 * 1000;
-                    if (!lastReminder || (now.getTime() - parseInt(lastReminder)) > fourHours) {
-                        app.sendNotification("Recordatorio", "Revisa el estado de tus tareas.");
-                        localStorage.setItem('last_periodic_reminder', now.getTime());
-                    }
-                }
-                if(app.data && app.data.projects) {
-                    app.data.projects.forEach(p => {
-                        if (!p.active) return;
-                        p.tasks.forEach(t => {
-                            if (t.done) return;
-                            const start = t.start ? new Date(t.start) : null;
-                            const end = t.end ? new Date(t.end) : null;
-                            if (start && now >= start && !t.notifiedStart) {
-                                app.sendNotification("Tarea Iniciada", `"${t.text}" ha comenzado.`);
-                                t.notifiedStart = true; app.saveData(); 
-                            }
-                            if (end) {
-                                const isToday = end.getDate() === now.getDate() && end.getMonth() === now.getMonth();
-                                if (isToday && !t.notifiedLastDay) {
-                                    app.sendNotification("Último Día", `"${t.text}" vence hoy.`);
-                                    t.notifiedLastDay = true; app.saveData();
-                                }
-                                if (now > end && !t.notifiedOverdue) {
-                                    app.sendNotification("Vencida", `"${t.text}" ha expirado.`);
-                                    t.notifiedOverdue = true; app.saveData();
-                                }
-                            }
-                        });
-                    });
-                }
             }
         };
 
