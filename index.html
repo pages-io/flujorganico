@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>flujo Orgánico</title>
+    <title>Flujo Orgánico</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -136,8 +136,18 @@
         .cal-task-dot.done { text-decoration: line-through; opacity: 0.6; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: flex-start; z-index: 1000; padding-top: 10vh; overflow-y: auto; }
-        .modal-content { background: white; padding: 2.5rem; border-radius: var(--radius-lg); width: 90%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); transform: scale(0.98); animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; margin-bottom: 5vh; overflow: hidden; }
+        .modal-content { background: white; padding: 2.5rem; border-radius: var(--radius-lg); width: 90%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); transform: scale(0.98); animation: popIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; margin-bottom: 5vh; overflow-y: auto; max-height: 85vh; }
         @keyframes popIn { to {transform: scale(1); opacity: 1;} }
+        
+        .info-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 4px; letter-spacing: 0.05em; }
+        .info-value { font-size: 1rem; color: var(--text-main); margin-bottom: 16px; font-weight: 500; }
+        .project-chip { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; color: white; }
+        
+        .dashboard-list-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 10px; border-bottom: 1px solid var(--border); transition: background 0.1s; border-radius: 8px; }
+        .dashboard-list-item:hover { background: #FAFAFA; }
+        .dashboard-list-item:last-child { border-bottom: none; }
+        .dashboard-task-name { font-weight: 500; color: var(--text-main); }
+        .dashboard-proj-tag { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; color: white; margin-left: 10px; text-transform: uppercase; letter-spacing: 0.02em; }
         
         /* LOGIN OVERLAY */
         #login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #F5F5F7; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
@@ -153,7 +163,11 @@
 
         /* RESPONSIVE */
         @media (max-width: 768px) {
-            body { flex-direction: column; height: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+            body { 
+                flex-direction: column; 
+                height: 100vh; /* Restore viewport height for body */
+                overflow: hidden; /* Stop body scrolling */
+            }
             .sidebar { 
                 position: fixed; bottom: 0; left: 0; right: 0; 
                 width: 100%; height: auto; 
@@ -174,7 +188,8 @@
                 padding: 1.5rem; 
                 padding-bottom: 100px; 
                 height: 100%; 
-                overflow: visible; 
+                overflow-y: auto; 
+                -webkit-overflow-scrolling: touch; /* Momentum scroll */
             }
             .header h1 { font-size: 1.8rem; }
             
@@ -208,7 +223,7 @@
             <li class="nav-item" data-tab="analiticas"><i data-lucide="pie-chart"></i><span>Reportes</span></li>
             <li class="nav-item" data-tab="configuracion"><i data-lucide="settings"></i><span>Ajustes</span></li>
         </ul>
-        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center; display: none;">v38.0 Fixed</div>
+        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center; display: none;">v46.0 Full Restore</div>
     </nav>
 
     <main class="main-content">
@@ -497,6 +512,7 @@
         const apiKey = ""; 
 
         const app = {
+            // --- STATE ---
             data: { projects: [], activityLog: [] },
             currentProjectId: null,
             editingProjectId: null,
@@ -513,86 +529,23 @@
             listenerUnsubscribe: null,
             colors: ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#8E8E93'],
 
-            // 1. HELPERS & UTILS
-            sendNotification(title, body) {
-                if ("Notification" in window && Notification.permission === "granted") {
-                    new Notification(title, { body, icon: 'https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/bell.svg' });
-                }
-            },
-            
-            checkNotificationTriggers() {
-                const now = new Date(); const currentHour = now.getHours();
-                if (currentHour >= 8 && currentHour <= 20) {
-                    const lastReminder = localStorage.getItem('last_periodic_reminder');
-                    const fourHours = 4 * 60 * 60 * 1000;
-                    if (!lastReminder || (now.getTime() - parseInt(lastReminder)) > fourHours) {
-                        this.sendNotification("Recordatorio", "Revisa el estado de tus tareas.");
-                        localStorage.setItem('last_periodic_reminder', now.getTime());
-                    }
-                }
-                if(this.data && this.data.projects) {
-                    this.data.projects.forEach(p => {
-                        if (!p.active) return;
-                        p.tasks.forEach(t => {
-                            if (t.done) return;
-                            const start = t.start ? new Date(t.start) : null;
-                            const end = t.end ? new Date(t.end) : null;
-                            if (start && now >= start && !t.notifiedStart) {
-                                this.sendNotification("Tarea Iniciada", `"${t.text}" ha comenzado.`);
-                                t.notifiedStart = true; this.saveData(); 
-                            }
-                            if (end) {
-                                const isToday = end.getDate() === now.getDate() && end.getMonth() === now.getMonth();
-                                if (isToday && !t.notifiedLastDay) {
-                                    this.sendNotification("Último Día", `"${t.text}" vence hoy.`);
-                                    t.notifiedLastDay = true; this.saveData();
-                                }
-                                if (now > end && !t.notifiedOverdue) {
-                                    this.sendNotification("Vencida", `"${t.text}" ha expirado.`);
-                                    t.notifiedOverdue = true; this.saveData();
-                                }
-                            }
-                        });
-                    });
-                }
-            },
-
-            logActivity(text) {
-                if (!this.data.activityLog) this.data.activityLog = [];
-                const now = new Date();
-                this.data.activityLog.unshift({ text, date: now.toISOString() });
-                if (this.data.activityLog.length > 20) this.data.activityLog.pop();
-            },
-
-            updateUserId(newId) {
-                this.userId = newId;
-                localStorage.setItem('flujo_custom_id', newId);
-                this.renderUserId();
-                this.setupFirestoreListener(); 
-            },
-
-            renderUserId() {
-                const el = document.getElementById('settings-user-id');
-                if(el && this.userId) el.textContent = this.userId;
-            },
-
-            // 2. INIT & DATA
+            // --- 1. INITIALIZATION ---
             async init() {
                 try {
                     const firebaseApp = initializeApp(firebaseConfig);
-                    this.auth = getAuth(firebaseApp);
-                    this.db = getFirestore(firebaseApp);
+                    app.auth = getAuth(firebaseApp);
+                    app.db = getFirestore(firebaseApp);
 
-                    await signInAnonymously(this.auth);
+                    await signInAnonymously(app.auth);
 
-                    onAuthStateChanged(this.auth, (user) => {
+                    onAuthStateChanged(app.auth, (user) => {
                         if (user) {
-                            this.authUserId = user.uid;
+                            app.authUserId = user.uid;
                             const savedId = localStorage.getItem('flujo_custom_id');
                             if (savedId) {
-                                this.userId = savedId;
-                                this.renderUserId();
-                                this.setupFirestoreListener();
+                                app.userId = savedId;
+                                app.renderUserId();
+                                app.setupFirestoreListener();
                                 document.getElementById('login-overlay').style.display = 'none'; 
                             } else {
                                 document.getElementById('login-overlay').style.display = 'flex';
@@ -600,77 +553,40 @@
                         }
                     });
 
-                    this.setupDates();
-                    this.setupEventListeners();
-                    this.renderColorPicker();
-                    // Initial Safe Render
-                    this.renderDashboard(); 
-                    this.renderProjects();
+                    app.setupDates();
+                    app.setupEventListeners();
+                    app.renderColorPicker();
+                    app.renderDashboard(); 
+                    app.renderProjects();
                     
-                    if ("Notification" in window) {
-                        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-                            Notification.requestPermission();
-                        }
+                    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+                        Notification.requestPermission();
                     }
-                    setInterval(() => this.checkNotificationTriggers(), 60000); 
+                    setInterval(() => app.checkNotificationTriggers(), 60000); 
 
                 } catch(e) { console.error("Init Error", e); }
                 lucide.createIcons();
             },
 
-            setupFirestoreListener() {
-                if (this.listenerUnsubscribe) this.listenerUnsubscribe();
-                if (!this.userId) return;
-
-                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'files', this.userId);
-                this.listenerUnsubscribe = onSnapshot(docRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        this.data = docSnap.data();
-                        // Fix undefined arrays if fresh data
-                        if (!this.data.projects) this.data.projects = [];
-                        if (!this.data.activityLog) this.data.activityLog = [];
-                        
-                        if(this.currentProjectId) {
-                             const p = this.data?.projects?.find(proj => proj.id === this.currentProjectId);
-                             if(p) this.renderTasks(p);
-                        }
-                        this.renderDashboard();
-                        this.renderProjects();
-                        this.renderAnalytics();
-                        this.renderCalendar();
-                    } else {
-                        // Initialize empty
-                        this.data = { projects: [], activityLog: [] };
-                        this.saveData();
-                    }
-                });
-            },
-
-            saveData() {
-                if (!this.db || !this.userId) return Promise.resolve();
-                const docRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'files', this.userId);
-                return setDoc(docRef, this.data);
-            },
-
-            // 3. RENDERERS
+            // --- 2. RENDER FUNCTIONS ---
             renderColorPicker() {
                 const container = document.getElementById('color-picker'); 
                 if (!container) return;
                 container.innerHTML = '';
-                this.colors.forEach(c => {
+                app.colors.forEach(c => {
                     const div = document.createElement('div'); div.className = 'color-option'; div.style.backgroundColor = c;
-                    if(c === this.selectedColor) div.classList.add('selected');
-                    div.onclick = () => { this.selectedColor = c; this.renderColorPicker(); };
+                    if(c === app.selectedColor) div.classList.add('selected');
+                    div.onclick = () => { app.selectedColor = c; app.renderColorPicker(); }; 
                     container.appendChild(div);
                 });
             },
 
             renderDashboard() {
-                if(!this.data || !this.data.projects) return;
-                const activeProjects = this.data.projects.filter(p => p.active);
+                if(!app.data || !app.data.projects) return;
+                const activeProjects = app.data.projects.filter(p => p.active);
                 let tasksTodayCount = 0; let tasksDoneCount = 0;
                 const today = new Date(); today.setHours(0,0,0,0);
-                this.data.projects.forEach(p => {
+                app.data.projects.forEach(p => {
                     p.tasks.forEach(t => {
                         if(t.done) tasksDoneCount++;
                         if (!t.done && t.start && t.end) {
@@ -686,8 +602,8 @@
                 
                 const list = document.getElementById('recent-activity-list');
                 list.innerHTML = '';
-                if (this.data.activityLog && this.data.activityLog.length > 0) {
-                     this.data.activityLog.slice(0, 5).forEach(act => {
+                if (app.data.activityLog && app.data.activityLog.length > 0) {
+                     app.data.activityLog.slice(0, 5).forEach(act => {
                          const time = new Date(act.date).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' });
                          const item = document.createElement('div');
                          item.className = 'activity-item';
@@ -708,11 +624,11 @@
 
             renderProjects() {
                 const list = document.getElementById('project-list'); list.innerHTML = '';
-                if (!this.data.projects || this.data.projects.length === 0) {
+                if (!app.data.projects || app.data.projects.length === 0) {
                     list.innerHTML = `<div class="empty-state" style="text-align: center; padding: 2rem; color: var(--text-tertiary);"><i data-lucide="folder-dashed" style="width:48px;height:48px; margin-bottom: 10px; opacity: 0.5;"></i><p>Sin proyectos</p></div>`;
                     lucide.createIcons(); return;
                 }
-                this.data.projects.forEach(p => {
+                app.data.projects.forEach(p => {
                     const div = document.createElement('div'); div.className = 'project-item';
                     const pColor = p.color || '#007AFF'; const activeClass = p.active ? 'dot-active' : 'dot-inactive';
                     div.innerHTML = `<div class="project-info-left"><div class="project-icon-box" style="background:${this.hexToRgba(pColor,0.1)}; color:${pColor};"><i data-lucide="folder" style="width:20px;"></i></div><div><div style="display:flex;align-items:center;margin-bottom:4px;"><span class="status-dot ${activeClass}"></span><h3 style="font-size:1rem;font-weight:600;">${p.name}</h3></div><div style="color:var(--text-secondary);font-size:0.85rem;">${p.pubs} pubs/sem</div></div></div><div style="display:flex;align-items:center;gap:20px;"><div style="text-align:right;"><div style="font-size:0.7rem;font-weight:700;color:var(--text-tertiary);">TAREAS</div><div style="font-size:0.9rem;font-weight:600;">${p.tasks.filter(t=>t.done).length}/${p.tasks.length}</div></div><button class="btn-ghost danger delete-btn"><i data-lucide="trash-2" style="width:18px;"></i></button><i data-lucide="chevron-right" style="color:#D2D2D7; width: 20px;"></i></div>`;
@@ -727,25 +643,23 @@
             },
 
             renderTasks(p) {
-                this.updateProjectWeeklyStats(p);
+                app.updateProjectWeeklyStats(p);
                 const ui = document.getElementById('task-list-ui'); ui.innerHTML = '';
                 const total = p.tasks.length; const done = p.tasks.filter(t => t.done).length;
                 const percent = total === 0 ? 0 : Math.round((done/total)*100);
                 document.getElementById('detail-percent').textContent = `${percent}%`;
                 document.getElementById('detail-bar').style.width = `${percent}%`;
-
                 if(total===0) { ui.innerHTML = `<div class="empty-state" style="padding:2rem;"><p>Sin tareas</p></div>`; return; }
-
                 p.tasks.forEach(t => {
-                    const status = this.getTaskStatus(t);
+                    const status = app.getTaskStatus(t);
                     let startDate = 'Sin fecha', endDate = 'Sin fecha';
                     if (t.start && !isNaN(new Date(t.start).getTime())) startDate = new Date(t.start).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
                     if (t.end && !isNaN(new Date(t.end).getTime())) endDate = new Date(t.end).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
                     const li = document.createElement('li'); li.className = 'task-item-ui';
                     li.innerHTML = `<div class="checkbox-wrapper" style="cursor:pointer;"><input type="checkbox" class="ios-checkbox" ${t.done?'checked':''} readonly></div><div style="flex:1;"><div style="display:flex;justify-content:space-between;"><span class="task-text ${t.done?'completed':''}" style="font-weight:600;">${t.text}</span><div style="display:flex;align-items:center;gap:8px;">${status.isOverdue ? `<span style="color:var(--danger);font-size:0.7rem;font-weight:600;display:flex;align-items:center;gap:4px;"><i data-lucide="alert-circle" style="width:14px;"></i> Verificar</span>`:''}<span class="task-status-badge ${status.class}">${status.label}</span></div></div><div style="font-size:0.9rem;color:#555;margin-top:4px;">${t.desc||''}</div><div class="task-meta-row"><span><i data-lucide="clock" style="width:12px;vertical-align:middle;"></i> ${startDate}</span><span><i data-lucide="flag" style="width:12px;vertical-align:middle;"></i> ${endDate}</span></div></div><div style="display:flex;gap:5px;"><button class="btn-ghost edit-task-btn"><i data-lucide="pencil" style="width:16px;color:#007AFF;"></i></button><button class="btn-ghost danger delete-task-btn"><i data-lucide="trash-2" style="width:16px;"></i></button></div>`;
-                    li.querySelector('.checkbox-wrapper').onclick = () => this.toggleTaskDone(t.id);
-                    li.querySelector('.edit-task-btn').onclick = () => this.openEditTaskModal(t.id);
-                    li.querySelector('.delete-task-btn').onclick = () => this.deleteTask(t.id);
+                    li.querySelector('.checkbox-wrapper').onclick = () => app.toggleTaskDone(t.id);
+                    li.querySelector('.edit-task-btn').onclick = () => app.openEditTaskModal(t.id);
+                    li.querySelector('.delete-task-btn').onclick = () => app.deleteTask(t.id);
                     ui.appendChild(li);
                 });
                 lucide.createIcons();
@@ -757,7 +671,6 @@
                 const monthName = new Date(year, month).toLocaleString('es-ES', { month: 'long' });
                 const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
                 document.getElementById('calendar-month-name').textContent = `${capitalizedMonth} ${year}`;
-                
                 ['D','L','M','X','J','V','S'].forEach(d => { const h=document.createElement('div'); h.className='cal-header'; h.textContent=d; grid.appendChild(h); });
                 const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month+1, 0).getDate();
                 for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
@@ -765,8 +678,8 @@
                     const cell = document.createElement('div'); cell.className='cal-day'; if(i===now.getDate()) cell.classList.add('today');
                     cell.innerHTML = `<div class="day-num">${i}</div>`;
                     const currentDt = new Date(year, month, i); currentDt.setHours(0,0,0,0);
-                    if(this.data.projects) {
-                        this.data.projects.forEach(p => {
+                    if(app.data.projects) {
+                        app.data.projects.forEach(p => {
                             if(p.active) p.tasks.forEach(t => {
                                 if(!t.start || !t.end) return;
                                 const start=new Date(t.start); start.setHours(0,0,0,0);
@@ -775,8 +688,8 @@
                                     const div = document.createElement('div'); div.className = `cal-task-dot ${t.done?'done':''}`;
                                     const isDeadline = currentDt.getTime() === end.getTime();
                                     div.innerHTML = `${isDeadline ? '<i data-lucide="flag" style="width:12px;"></i>' : ''} ${t.text}`;
-                                    div.style.color = p.color; div.style.borderLeftColor = p.color; div.style.background = this.hexToRgba(p.color||'#007AFF', 0.1);
-                                    div.onclick = (e) => { e.stopPropagation(); this.openCalendarTaskInfo(p.id, t.id); };
+                                    div.style.color = p.color; div.style.borderLeftColor = p.color; div.style.background = app.hexToRgba(p.color||'#007AFF', 0.1);
+                                    div.onclick = (e) => { e.stopPropagation(); app.openCalendarTaskInfo(p.id, t.id); };
                                     cell.appendChild(div);
                                 }
                             });
@@ -790,7 +703,7 @@
                 const canvas = document.getElementById('statusChart');
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
-                const total = this.data.projects ? this.data.projects.length : 0;
+                const total = app.data.projects ? app.data.projects.length : 0;
                 document.getElementById('chart-total').textContent = total;
                 const scale = window.devicePixelRatio || 1;
                 ctx.canvas.width = 220 * scale; ctx.canvas.height = 220 * scale;
@@ -799,7 +712,7 @@
                 if(total === 0) {
                     ctx.beginPath(); ctx.arc(110,110, 85, 0, 2*Math.PI); ctx.strokeStyle = '#F2F2F7'; ctx.lineWidth = 25; ctx.stroke();
                 } else {
-                    const activeCount = this.data.projects.filter(p => p.active).length;
+                    const activeCount = app.data.projects.filter(p => p.active).length;
                     let start = -0.5 * Math.PI; 
                     const colors = { active: '#34C759', inactive: '#E5E5EA' };
                     ctx.beginPath(); ctx.arc(110,110, 85, 0, 2*Math.PI); ctx.strokeStyle = '#F2F2F7'; ctx.lineWidth = 25; ctx.stroke();
@@ -808,20 +721,136 @@
                         ctx.beginPath(); ctx.arc(110, 110, 85, start, start+slice); ctx.strokeStyle = colors.active; ctx.lineWidth = 25; ctx.lineCap = 'round'; ctx.stroke();
                     }
                 }
-                // Global completion
                 let totalTasks = 0, doneTasks = 0;
-                if(this.data.projects) this.data.projects.forEach(p => { if(p.active) { totalTasks += p.tasks.length; doneTasks += p.tasks.filter(t => t.done).length; } });
+                if(app.data.projects) app.data.projects.forEach(p => { if(p.active) { totalTasks += p.tasks.length; doneTasks += p.tasks.filter(t => t.done).length; } });
                 const globalRate = totalTasks === 0 ? 0 : Math.round((doneTasks/totalTasks)*100);
                 document.getElementById('global-completion-rate').textContent = `${globalRate}%`;
                 document.getElementById('global-completion-bar').style.width = `${globalRate}%`;
             },
+
+            openDashboardDetail(type) {
+                const modalList = document.getElementById('db-modal-list'); const modalTitle = document.getElementById('db-modal-title');
+                const filterSection = document.getElementById('db-modal-filter-section'); const filterSelect = document.getElementById('db-modal-search');
+                
+                modalList.innerHTML = ''; app.currentDashboardListItems = [];
+                filterSelect.value = 'Todos los proyectos'; app.currentFilterValue = 'all';
+
+                if (type === 'projects') {
+                    modalTitle.textContent = 'Proyectos Activos'; filterSection.style.display = 'none';
+                    app.data.projects.filter(p => p.active).forEach(p => app.currentDashboardListItems.push({ type: 'project', data: p }));
+                } else if (type === 'today') {
+                    modalTitle.textContent = 'Tareas para Hoy'; filterSection.style.display = 'block';
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const projectsSet = new Set();
+                    app.data.projects.forEach(p => {
+                        if (p.active) {
+                            projectsSet.add(p);
+                            p.tasks.forEach(t => {
+                                if (!t.done && t.start && t.end) {
+                                    const start = new Date(t.start); start.setHours(0,0,0,0);
+                                    const end = new Date(t.end); end.setHours(23,59,59,999);
+                                    if (today >= start && today <= end) app.currentDashboardListItems.push({ type: 'task', data: t, project: p });
+                                }
+                            });
+                        }
+                    });
+                    app.populateCustomOptions(projectsSet);
+                } else if (type === 'completed') {
+                    modalTitle.textContent = 'Tareas Finalizadas'; filterSection.style.display = 'block';
+                    const projectsSet = new Set();
+                    app.data.projects.forEach(p => {
+                        p.tasks.forEach(t => {
+                            if (t.done) { app.currentDashboardListItems.push({ type: 'task', data: t, project: p }); projectsSet.add(p); }
+                        });
+                    });
+                    app.populateCustomOptions(projectsSet);
+                }
+                app.renderDashboardListItems(app.currentDashboardListItems);
+                document.getElementById('dashboard-detail-modal').style.display = 'flex';
+            },
+
+            renderDashboardListItems(items) {
+                const container = document.getElementById('db-modal-list'); container.innerHTML = '';
+                if (items.length === 0) { container.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-secondary);">No se encontraron elementos.</div>'; return; }
+                items.forEach(item => {
+                    const div = document.createElement('div'); div.className = 'dashboard-list-item';
+                    if (item.type === 'project') {
+                        const p = item.data; const pColor = p.color || '#007AFF';
+                        div.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><div style="width:10px; height:10px; border-radius:50%; background:${pColor};"></div><span class="dashboard-task-name">${p.name}</span></div><div style="font-size:0.8rem; color:var(--text-secondary);">${p.pubs} pubs/sem</div>`;
+                    } else {
+                        const t = item.data; const p = item.project; const pColor = p.color || '#007AFF';
+                        div.innerHTML = `<div style="display:flex; flex-direction:column;"><span class="dashboard-task-name">${t.text}</span><span style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">${new Date(t.end).toLocaleDateString()}</span></div><div class="dashboard-proj-tag" style="background:${pColor};">${p.name}</div>`;
+                    }
+                    container.appendChild(div);
+                });
+            },
+
+            renderFilteredList() {
+                if (app.currentFilterValue === 'all') app.renderDashboardListItems(app.currentDashboardListItems);
+                else {
+                    const filtered = app.currentDashboardListItems.filter(item => item.project && item.project.id == app.currentFilterValue);
+                    app.renderDashboardListItems(filtered);
+                }
+            },
+
+            populateCustomOptions(set) {
+                const container = document.getElementById('db-custom-options'); container.innerHTML = '';
+                const allOpt = document.createElement('div'); allOpt.className = 'custom-option'; allOpt.textContent = 'Todos los proyectos';
+                allOpt.onclick = () => app.selectProjectFilter('all', 'Todos los proyectos'); container.appendChild(allOpt);
+                set.forEach(p => {
+                    const opt = document.createElement('div'); opt.className = 'custom-option';
+                    opt.innerHTML = `<div style="width:8px; height:8px; border-radius:50%; background:${p.color||'#ccc'};"></div>${p.name}`;
+                    opt.onclick = () => app.selectProjectFilter(p.id, p.name); container.appendChild(opt);
+                });
+            },
             
+            // --- 3. FIREBASE PUBLIC SYNC ---
+            setupFirestoreListener() {
+                if (app.listenerUnsubscribe) app.listenerUnsubscribe();
+                if (!app.userId) return;
+
+                const docRef = doc(app.db, 'artifacts', app.appId, 'public', 'data', 'files', app.userId);
+                app.listenerUnsubscribe = onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        app.data = docSnap.data();
+                        if (!app.data.projects) app.data.projects = [];
+                        if (!app.data.activityLog) app.data.activityLog = [];
+                        
+                        if(app.currentProjectId) {
+                             const p = app.data?.projects?.find(proj => proj.id === app.currentProjectId);
+                             if(p) app.renderTasks(p);
+                        }
+                        app.renderDashboard();
+                        app.renderProjects();
+                        app.renderAnalytics();
+                        app.renderCalendar();
+                    } else {
+                        // Initialize empty
+                        app.data = { projects: [], activityLog: [] };
+                        app.saveData();
+                    }
+                });
+            },
+
+            saveData() {
+                if (!app.db || !app.userId) return Promise.resolve();
+                const docRef = doc(app.db, 'artifacts', app.appId, 'public', 'data', 'files', app.userId);
+                return setDoc(docRef, app.data);
+            },
+
+            logActivity(text) {
+                if (!app.data.activityLog) app.data.activityLog = [];
+                const now = new Date();
+                app.data.activityLog.unshift({ text, date: now.toISOString() });
+                if (app.data.activityLog.length > 20) app.data.activityLog.pop();
+            },
+
             // --- 4. EVENT LISTENERS ---
             setupEventListeners() {
                 document.querySelectorAll('.nav-item').forEach(item => {
                     item.addEventListener('click', () => {
                         const tab = item.getAttribute('data-tab');
-                        if (tab) this.navigate(tab);
+                        if (tab) app.navigate(tab);
                     });
                 });
 
@@ -834,69 +863,68 @@
                 safeAdd('btn-login-action', () => {
                     const input = document.getElementById('login-id-input');
                     if (input && input.value.trim() !== '') {
-                        this.updateUserId(input.value.trim());
+                        app.updateUserId(input.value.trim());
                         document.getElementById('login-overlay').style.display = 'none';
                     } else { alert("Por favor escribe un nombre."); }
                 });
 
-                safeAdd('btn-new-project', () => this.openCreateProjectModal());
-                safeAdd('btn-back-projects', () => this.closeProject());
-                safeAdd('btn-edit-project', () => this.openEditProjectModal());
-                safeAdd('btn-save-project', (e) => this.saveProject(e));
-                safeAdd('btn-cancel-project', () => this.toggleProjectModal(false));
+                safeAdd('btn-new-project', () => app.openCreateProjectModal());
+                safeAdd('btn-back-projects', () => app.closeProject());
+                safeAdd('btn-edit-project', () => app.openEditProjectModal());
+                safeAdd('btn-save-project', (e) => app.saveProject(e));
+                safeAdd('btn-cancel-project', () => app.toggleProjectModal(false));
 
-                safeAdd('btn-new-task', () => this.openCreateTaskModal());
-                safeAdd('btn-save-task', (e) => this.saveTask(e));
-                safeAdd('btn-cancel-task', () => this.toggleTaskModal(false));
+                safeAdd('btn-new-task', () => app.openCreateTaskModal());
+                safeAdd('btn-save-task', (e) => app.saveTask(e));
+                safeAdd('btn-cancel-task', () => app.toggleTaskModal(false));
 
-                safeAdd('btn-cancel-delete', () => this.toggleConfirmationModal(false));
-                safeAdd('btn-confirm-delete', () => this.confirmDelete());
-                safeAdd('btn-clear-data', () => this.clearData());
+                safeAdd('btn-cancel-delete', () => app.toggleConfirmationModal(false));
+                safeAdd('btn-confirm-delete', () => app.confirmDelete());
+                safeAdd('btn-clear-data', () => app.clearData());
 
                 safeAdd('btn-close-cal-modal', () => document.getElementById('cal-task-modal').style.display='none');
                 safeAdd('btn-close-cal-modal-action', () => document.getElementById('cal-task-modal').style.display='none');
                 safeAdd('btn-close-db-modal', () => document.getElementById('dashboard-detail-modal').style.display='none');
 
-                safeAdd('btn-ai-suggest', () => this.suggestTasksWithAI());
-                safeAdd('btn-ai-improve', () => this.improveTaskDescription());
+                safeAdd('btn-ai-suggest', () => app.suggestTasksWithAI());
+                safeAdd('btn-ai-improve', () => app.improveTaskDescription());
                 
                 safeAdd('btn-change-profile-name', () => {
-                   this.openProfileModal(); // NOW CALLS MODAL
+                   app.openProfileModal(); 
                 });
 
                 // New Profile Modal Buttons
-                safeAdd('btn-cancel-profile', () => this.toggleProfileModal(false));
-                safeAdd('btn-save-profile', () => this.saveProfileId());
+                safeAdd('btn-cancel-profile', () => app.toggleProfileModal(false));
+                safeAdd('btn-save-profile', () => app.saveProfileId());
 
                 safeAdd('btn-logout', () => { localStorage.removeItem('flujo_custom_id'); location.reload(); });
 
-                safeAdd('card-projects', () => this.openDashboardDetail('projects'));
-                safeAdd('card-today', () => this.openDashboardDetail('today'));
-                safeAdd('card-completed', () => this.openDashboardDetail('completed'));
+                safeAdd('card-projects', () => app.openDashboardDetail('projects'));
+                safeAdd('card-today', () => app.openDashboardDetail('today'));
+                safeAdd('card-completed', () => app.openDashboardDetail('completed'));
 
                 const searchInput = document.getElementById('db-modal-search');
                 if(searchInput) {
-                    searchInput.addEventListener('click', () => this.toggleDropdown(true));
-                    searchInput.addEventListener('keyup', () => this.filterDropdownOptions());
+                    searchInput.addEventListener('click', () => app.toggleDropdown(true));
+                    searchInput.addEventListener('keyup', () => app.filterDropdownOptions());
                 }
 
                 window.addEventListener('click', (e) => {
                     const wrapper = document.querySelector('.custom-select-wrapper');
-                    if(wrapper && !wrapper.contains(e.target)) this.toggleDropdown(false);
-                    if (e.target.classList.contains('modal-overlay')) e.target.style.display = 'none';
+                    if(wrapper && !wrapper.contains(e.target)) app.toggleDropdown(false);
                 });
             },
 
             // --- 5. HELPERS ---
             updateUserId(newId) {
-                this.userId = newId;
+                app.userId = newId;
                 localStorage.setItem('flujo_custom_id', newId);
-                this.renderUserId();
-                this.setupFirestoreListener(); 
+                app.renderUserId();
+                app.setupFirestoreListener(); 
             },
             renderUserId() {
                 const el = document.getElementById('settings-user-id');
-                if(el && this.userId) el.textContent = this.userId;
+                if(el && app.userId) el.textContent = app.userId;
             },
             setupDates() {
                 const options = { weekday: 'long', month: 'long', day: 'numeric' };
@@ -911,9 +939,8 @@
                 const idx = tabs.indexOf(tabId);
                 if(idx !== -1) document.querySelectorAll('.nav-item')[idx].classList.add('active');
                 
-                // Fix View State logic
                 if (tabId === 'proyectos') {
-                    if (this.currentProjectId) {
+                    if (app.currentProjectId) {
                         document.getElementById('projects-view-list').style.display = 'none';
                         document.getElementById('projects-view-detail').style.display = 'block';
                     } else {
@@ -921,14 +948,13 @@
                         document.getElementById('projects-view-detail').style.display = 'none';
                     }
                 } else {
-                    // Force reset project view when leaving tab
-                    this.currentProjectId = null;
+                    app.currentProjectId = null;
                     document.getElementById('projects-view-detail').style.display = 'none';
                     document.getElementById('projects-view-list').style.display = 'block';
                 }
 
-                if (tabId === 'calendario') this.renderCalendar();
-                if (tabId === 'analiticas') this.renderAnalytics();
+                if (tabId === 'calendario') app.renderCalendar();
+                if (tabId === 'analiticas') app.renderAnalytics();
                 setTimeout(() => lucide.createIcons(), 50);
             },
             hexToRgba(hex, alpha) {
@@ -938,26 +964,28 @@
             toggleProjectModal(show) {
                 if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
                 const modal = document.getElementById('project-modal'); modal.style.display = show ? 'flex' : 'none';
-                if(!show) this.editingProjectId = null;
+                if(!show) app.editingProjectId = null;
             },
             openCreateProjectModal() {
-                this.editingProjectId = null; document.getElementById('project-modal-title').textContent = 'Nuevo Proyecto';
+                app.editingProjectId = null; document.getElementById('project-modal-title').textContent = 'Nuevo Proyecto';
                 const form = document.querySelector('#project-form'); if(form) form.reset();
-                this.selectedColor = '#007AFF'; this.renderColorPicker(); this.toggleProjectModal(true);
+                app.selectedColor = '#007AFF'; app.renderColorPicker(); app.toggleProjectModal(true);
             },
             openEditProjectModal() {
-                if(!this.currentProjectId) return;
-                const p = this.data.projects.find(proj => proj.id === this.currentProjectId); if(!p) return;
-                this.editingProjectId = p.id; document.getElementById('project-modal-title').textContent = 'Editar Proyecto';
+                if(!app.currentProjectId) return;
+                const p = app.data.projects.find(proj => proj.id === app.currentProjectId); if(!p) return;
+                app.editingProjectId = p.id; document.getElementById('project-modal-title').textContent = 'Editar Proyecto';
                 document.getElementById('p-name').value = p.name; document.getElementById('p-contract').value = p.contractDate;
                 document.getElementById('p-pubs').value = p.pubs; document.getElementById('p-active').checked = p.active;
-                this.selectedColor = p.color || '#007AFF'; this.renderColorPicker(); this.toggleProjectModal(true);
+                app.selectedColor = p.color || '#007AFF'; app.renderColorPicker(); app.toggleProjectModal(true);
             },
-            saveProject(e) {
+            
+            // --- 7. CRITICAL PROJECT LOGIC ---
+            
+            async saveProject(e) {
                 if (e) e.preventDefault(); if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
                 
-                // Ensure data structure exists
-                if (!this.data.projects) this.data.projects = [];
+                if (!app.data.projects) app.data.projects = [];
                 
                 const name = document.getElementById('p-name').value;
                 const contract = document.getElementById('p-contract').value;
@@ -966,123 +994,148 @@
                 
                 if(!name) { alert("Nombre requerido"); return; }
                 
+                const btn = document.getElementById('btn-save-project');
+                btn.textContent = "Guardando..."; btn.disabled = true;
+
                 let logMsg = "";
                 try {
-                    if (this.editingProjectId) {
-                        const p = this.data.projects.find(proj => proj.id === this.editingProjectId);
+                    if (app.editingProjectId) {
+                        const p = app.data.projects.find(proj => proj.id === app.editingProjectId);
                         if(p) { 
-                            p.name = name; p.contractDate = contract; p.pubs = pubs; p.active = isActive; p.color = this.selectedColor;
-                            if(this.currentProjectId === p.id) { 
+                            p.name = name; p.contractDate = contract; p.pubs = pubs; p.active = isActive; p.color = app.selectedColor;
+                            if(app.currentProjectId === p.id) { 
                                 const titleEl = document.getElementById('detail-title');
                                 if(titleEl) titleEl.textContent = p.name; 
-                                this.updateProjectWeeklyStats(p); 
+                                app.updateProjectWeeklyStats(p); 
                             }
                             logMsg = `Se ha editado el proyecto "${name}"`;
                         }
                     } else {
-                        this.data.projects.push({ 
+                        app.data.projects.push({ 
                             id: Date.now(), 
                             name, 
                             date: new Date().toISOString().split('T')[0], 
                             contractDate: contract, 
                             active: isActive, 
                             pubs, 
-                            color: this.selectedColor, 
+                            color: app.selectedColor, 
                             tasks: [] 
                         });
-                        this.sendNotification("Proyecto Creado", name);
+                        app.sendNotification("Proyecto Creado", name);
                         logMsg = `Se ha creado el proyecto "${name}"`;
                     }
-                    this.logActivity(logMsg);
-                    this.saveData(); 
-                    this.toggleProjectModal(false); 
-                    this.renderProjects();
+                    app.logActivity(logMsg);
+                    await app.saveData(); 
+                    app.toggleProjectModal(false); 
+                    app.renderProjects();
                 } catch(err) {
                     console.error("Save error:", err);
-                    alert("Error al guardar. Intenta recargar la página.");
+                    alert("Error al guardar: " + err.message);
+                } finally {
+                    btn.textContent = "Guardar"; btn.disabled = false;
                 }
             },
+            
             toggleTaskModal(show) {
                 if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
                 const modal = document.getElementById('task-modal');
-                if(show) modal.style.display = 'flex'; else setTimeout(() => { modal.style.display = 'none'; this.editingTaskId = null; }, 10);
+                if(show) modal.style.display = 'flex'; else setTimeout(() => { modal.style.display = 'none'; app.editingTaskId = null; }, 10);
             },
             openCreateTaskModal() {
-                this.editingTaskId = null; document.getElementById('task-modal-title').textContent = 'Nueva Tarea';
+                app.editingTaskId = null; document.getElementById('task-modal-title').textContent = 'Nueva Tarea';
                 const form = document.querySelector('#task-form'); if(form) form.reset();
                 const now = new Date(); const tzOffset = now.getTimezoneOffset() * 60000;
                 const nowStr = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16);
                 document.getElementById('t-start').value = nowStr; document.getElementById('t-end').value = nowStr;
-                this.toggleTaskModal(true);
+                app.toggleTaskModal(true);
             },
             openEditTaskModal(taskId) {
-                const p = this.data.projects.find(proj => proj.id === this.currentProjectId); const task = p.tasks.find(t => t.id === taskId);
-                if(!task) return; this.editingTaskId = taskId;
+                const p = app.data.projects.find(proj => proj.id === app.currentProjectId); const task = p.tasks.find(t => t.id === taskId);
+                if(!task) return; app.editingTaskId = taskId;
                 document.getElementById('task-modal-title').textContent = 'Editar Tarea';
                 document.getElementById('t-name').value = task.text; document.getElementById('t-desc').value = task.desc;
                 document.getElementById('t-start').value = task.start; document.getElementById('t-end').value = task.end;
-                this.toggleTaskModal(true);
+                app.toggleTaskModal(true);
             },
-            saveTask(e) {
+            async saveTask(e) {
                 if (e) e.preventDefault(); if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-                if (!this.currentProjectId) return;
+                if (!app.currentProjectId) return;
                 const name = document.getElementById('t-name').value; const desc = document.getElementById('t-desc').value;
                 const start = document.getElementById('t-start').value; const end = document.getElementById('t-end').value;
                 if(!name || !start || !end) { alert("Completa los campos"); return; }
-                const p = this.data.projects.find(proj => proj.id === this.currentProjectId);
-                let logMsg = "";
-                if (this.editingTaskId) {
-                    const task = p.tasks.find(t => t.id === this.editingTaskId);
-                    if(task) { task.text = name; task.desc = desc; task.start = start; task.end = end; task.notifiedStart = false; task.notifiedLastDay = false; }
-                    logMsg = `Se ha editado la tarea "${name}" en "${p.name}"`;
-                } else {
-                    p.tasks.push({ id: Date.now(), text: name, desc, start, end, done: false });
-                    this.sendNotification("Nueva Tarea", name);
-                    logMsg = `Se ha creado la tarea "${name}" en "${p.name}"`;
+                
+                const btn = document.getElementById('btn-save-task');
+                btn.textContent = "Guardando..."; btn.disabled = true;
+
+                try {
+                    const p = app.data.projects.find(proj => proj.id === app.currentProjectId);
+                    let logMsg = "";
+                    if (app.editingTaskId) {
+                        const task = p.tasks.find(t => t.id === app.editingTaskId);
+                        if(task) { task.text = name; task.desc = desc; task.start = start; task.end = end; task.notifiedStart = false; task.notifiedLastDay = false; }
+                        logMsg = `Se ha editado la tarea "${name}" en "${p.name}"`;
+                    } else {
+                        p.tasks.push({ id: Date.now(), text: name, desc, start, end, done: false });
+                        app.sendNotification("Nueva Tarea", name);
+                        logMsg = `Se ha creado la tarea "${name}" en "${p.name}"`;
+                    }
+                    app.logActivity(logMsg);
+                    await app.saveData(); 
+                    app.toggleTaskModal(false); 
+                    app.renderTasks(p);
+                } catch(err) {
+                    alert("Error al guardar tarea: " + err.message);
+                } finally {
+                    btn.textContent = "Guardar"; btn.disabled = false;
                 }
-                this.logActivity(logMsg);
-                this.saveData(); this.toggleTaskModal(false); this.renderTasks(p);
             },
-            toggleConfirmationModal(show) { const modal = document.getElementById('confirmation-modal'); modal.style.display = show ? 'flex' : 'none'; if (!show) this.pendingDelete = null; },
-            deleteProject(e, id) { e.stopPropagation(); this.pendingDelete = { type: 'project', id }; document.getElementById('conf-modal-title').textContent = '¿Eliminar Proyecto?'; document.getElementById('conf-modal-msg').textContent = 'Se perderán todas las tareas.'; this.toggleConfirmationModal(true); },
-            deleteTask(taskId) { this.pendingDelete = { type: 'task', id: taskId }; document.getElementById('conf-modal-title').textContent = '¿Eliminar Tarea?'; document.getElementById('conf-modal-msg').textContent = 'Se eliminará permanentemente.'; this.toggleConfirmationModal(true); },
+            toggleConfirmationModal(show) { const modal = document.getElementById('confirmation-modal'); modal.style.display = show ? 'flex' : 'none'; if (!show) app.pendingDelete = null; },
+            deleteProject(e, id) { e.stopPropagation(); app.pendingDelete = { type: 'project', id }; document.getElementById('conf-modal-title').textContent = '¿Eliminar Proyecto?'; document.getElementById('conf-modal-msg').textContent = 'Se perderán todas las tareas.'; app.toggleConfirmationModal(true); },
+            deleteTask(taskId) { app.pendingDelete = { type: 'task', id: taskId }; document.getElementById('conf-modal-title').textContent = '¿Eliminar Tarea?'; document.getElementById('conf-modal-msg').textContent = 'Se eliminará permanentemente.'; app.toggleConfirmationModal(true); },
             async confirmDelete() {
-                if (!this.pendingDelete) return;
+                if (!app.pendingDelete) return;
                 let logMsg = "";
-                if (this.pendingDelete.type === 'reset') {
-                     this.data.projects = []; await this.saveData(); location.reload(); return;
+                if (app.pendingDelete.type === 'reset') {
+                     app.data.projects = []; await app.saveData(); location.reload(); return;
                 }
-                if (this.pendingDelete.type === 'project') {
-                    const p = this.data.projects.find(p => p.id === this.pendingDelete.id);
+                if (app.pendingDelete.type === 'project') {
+                    const p = app.data.projects.find(p => p.id === app.pendingDelete.id);
                     if(p) logMsg = `Se ha eliminado el proyecto "${p.name}"`;
-                    this.data.projects = this.data.projects.filter(p => p.id !== this.pendingDelete.id);
-                    if (this.currentProjectId === this.pendingDelete.id) this.closeProject();
-                } else if (this.pendingDelete.type === 'task') {
-                    const p = this.data.projects.find(proj => proj.id === this.currentProjectId);
+                    app.data.projects = app.data.projects.filter(p => p.id !== app.pendingDelete.id);
+                    if (app.currentProjectId === app.pendingDelete.id) app.closeProject();
+                } else if (app.pendingDelete.type === 'task') {
+                    const p = app.data.projects.find(proj => proj.id === app.currentProjectId);
                     if (p) { 
-                        const t = p.tasks.find(tk => tk.id === this.pendingDelete.id);
+                        const t = p.tasks.find(tk => tk.id === app.pendingDelete.id);
                         if(t) logMsg = `Se ha eliminado la tarea "${t.text}" de "${p.name}"`;
-                        p.tasks = p.tasks.filter(t => t.id !== this.pendingDelete.id); 
-                        this.renderTasks(p); 
+                        p.tasks = p.tasks.filter(t => t.id !== app.pendingDelete.id); 
+                        app.renderTasks(p); 
                     }
                 }
-                this.logActivity(logMsg);
-                this.saveData(); this.renderProjects(); this.toggleConfirmationModal(false);
+                app.logActivity(logMsg);
+                await app.saveData(); app.renderProjects(); app.toggleConfirmationModal(false);
             },
+            
             openProject(id) {
-                this.currentProjectId = id; const p = this.data.projects.find(proj => proj.id === id);
+                app.currentProjectId = id; const p = app.data.projects.find(proj => proj.id === id);
                 document.getElementById('projects-view-list').style.display = 'none'; document.getElementById('projects-view-detail').style.display = 'block';
                 document.getElementById('detail-title').textContent = p.name; document.getElementById('detail-contract').textContent = p.contractDate || '-';
                 document.getElementById('detail-pubs').textContent = p.pubs; document.getElementById('detail-badge').textContent = p.active ? 'Activo' : 'Inactivo';
                 document.getElementById('detail-badge').className = p.active ? 'badge badge-active' : 'badge badge-inactive';
-                this.renderTasks(p); lucide.createIcons();
+                app.renderTasks(p); lucide.createIcons();
             },
-            closeProject() { this.currentProjectId = null; document.getElementById('projects-view-detail').style.display = 'none'; document.getElementById('projects-view-list').style.display = 'block'; this.renderProjects(); },
+            closeProject() { 
+                app.currentProjectId = null; 
+                document.getElementById('projects-view-detail').style.display = 'none'; 
+                document.getElementById('projects-view-list').style.display = 'block'; 
+                app.renderProjects(); 
+            },
             toggleTaskDone(id) {
-                const p = this.data.projects.find(proj => proj.id === this.currentProjectId);
+                const p = app.data.projects.find(proj => proj.id === app.currentProjectId);
                 const t = p.tasks.find(tk => tk.id === id);
-                if(t) { t.done = !t.done; this.saveData(); this.renderTasks(p); }
+                if(t) { t.done = !t.done; app.saveData(); app.renderTasks(p); }
             },
+            
             getTaskStatus(t) {
                 if(t.done) return {label:'Finalizado', class:'ts-done'};
                 const now = new Date(), start = new Date(t.start), end = new Date(t.end);
@@ -1097,7 +1150,6 @@
                 const currentWeekEnd = new Date(currentWeekStart); currentWeekEnd.setDate(currentWeekStart.getDate() + 6); currentWeekEnd.setHours(23,59,59,999);
                 const prevWeekStart = new Date(currentWeekStart); prevWeekStart.setDate(currentWeekStart.getDate() - 7);
                 const prevWeekEnd = new Date(currentWeekStart); prevWeekEnd.setMilliseconds(prevWeekEnd.getMilliseconds() - 1);
-
                 let currentWeekCount = 0; let prevWeekCount = 0;
                 p.tasks.forEach(t => {
                     if(t.done && t.end) { 
@@ -1116,12 +1168,12 @@
                 else { statusEl.textContent = 'Sin completar'; statusEl.style.color = 'var(--warning)'; }
             },
             openCalendarTaskInfo(pid, tid) {
-                const p = this.data.projects.find(proj => proj.id === pid); const t = p.tasks.find(task => task.id === tid);
+                const p = app.data.projects.find(proj => proj.id === pid); const t = p.tasks.find(task => task.id === tid);
                 if(p && t) {
                     document.getElementById('cal-modal-project').textContent = p.name;
                     document.getElementById('cal-modal-project').style.backgroundColor = p.color || '#007AFF';
                     document.getElementById('cal-modal-task').textContent = t.text;
-                    const status = this.getTaskStatus(t);
+                    const status = app.getTaskStatus(t);
                     document.getElementById('cal-modal-status').innerHTML = `<span class="task-status-badge ${status.class}">${status.label}</span>`;
                     const startFmt = t.start ? new Date(t.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha';
                     const endFmt = t.end ? new Date(t.end).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Sin fecha';
@@ -1130,19 +1182,42 @@
                     document.getElementById('cal-task-modal').style.display = 'flex';
                 }
             },
-            clearData() { 
-                this.pendingDelete = { type: 'reset' };
-                document.getElementById('conf-modal-title').textContent = '¿Reiniciar Aplicación?';
-                document.getElementById('conf-modal-msg').textContent = 'Se borrarán todos los proyectos y tareas. Esta acción es irreversible.';
-                this.toggleConfirmationModal(true);
+            
+            // --- 8. NEW PROFILE MODAL LOGIC ---
+            toggleProfileModal(show) {
+                const modal = document.getElementById('profile-modal');
+                if(modal) {
+                    modal.style.display = show ? 'flex' : 'none';
+                    if(show) {
+                        const input = document.getElementById('input-edit-profile-id');
+                        if(input) {
+                            input.value = app.userId;
+                            input.focus();
+                        }
+                    }
+                }
             },
-            selectProjectFilter(id, name) {
-                document.getElementById('db-modal-search').value = name; this.currentFilterValue = id;
-                this.toggleDropdown(false); this.renderFilteredList();
+            openProfileModal() {
+                app.toggleProfileModal(true);
+            },
+            saveProfileId() {
+                const input = document.getElementById('input-edit-profile-id');
+                if(input && input.value.trim() !== "") {
+                    app.updateUserId(input.value.trim());
+                    app.toggleProfileModal(false);
+                } else {
+                     alert("El ID no puede estar vacío");
+                }
             },
             toggleDropdown(show) {
                 const list = document.getElementById('db-custom-options');
                 if(show) { list.classList.add('show'); document.getElementById('db-modal-search').focus(); } else list.classList.remove('show');
+            },
+            selectProjectFilter(id, name) {
+                document.getElementById('db-modal-search').value = name; 
+                app.currentFilterValue = id;
+                app.toggleDropdown(false); 
+                app.renderFilteredList();
             },
             filterDropdownOptions() {
                 const input = document.getElementById('db-modal-search'); const filter = input.value.toLowerCase();
@@ -1152,105 +1227,11 @@
                     options[i].style.display = txtValue.toLowerCase().indexOf(filter) > -1 ? "" : "none";
                 }
             },
-            renderFilteredList() {
-                if (this.currentFilterValue === 'all') this.renderDashboardListItems(this.currentDashboardListItems);
-                else {
-                    const filtered = this.currentDashboardListItems.filter(item => item.project && item.project.id == this.currentFilterValue);
-                    this.renderDashboardListItems(filtered);
-                }
-            },
-            renderDashboardListItems(items) {
-                const container = document.getElementById('db-modal-list'); container.innerHTML = '';
-                if (items.length === 0) { container.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-secondary);">No se encontraron elementos.</div>'; return; }
-                items.forEach(item => {
-                    const div = document.createElement('div'); div.className = 'dashboard-list-item';
-                    if (item.type === 'project') {
-                        const p = item.data; const pColor = p.color || '#007AFF';
-                        div.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><div style="width:10px; height:10px; border-radius:50%; background:${pColor};"></div><span class="dashboard-task-name">${p.name}</span></div><div style="font-size:0.8rem; color:var(--text-secondary);">${p.pubs} pubs/sem</div>`;
-                    } else {
-                        const t = item.data; const p = item.project; const pColor = p.color || '#007AFF';
-                        div.innerHTML = `<div style="display:flex; flex-direction:column;"><span class="dashboard-task-name">${t.text}</span><span style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">${new Date(t.end).toLocaleDateString()}</span></div><div class="dashboard-proj-tag" style="background:${pColor};">${p.name}</div>`;
-                    }
-                    container.appendChild(div);
-                });
-            },
-            populateCustomOptions(set) {
-                const container = document.getElementById('db-custom-options'); container.innerHTML = '';
-                const allOpt = document.createElement('div'); allOpt.className = 'custom-option'; allOpt.textContent = 'Todos los proyectos';
-                allOpt.onclick = () => this.selectProjectFilter('all', 'Todos los proyectos'); container.appendChild(allOpt);
-                set.forEach(p => {
-                    const opt = document.createElement('div'); opt.className = 'custom-option';
-                    opt.innerHTML = `<div style="width:8px; height:8px; border-radius:50%; background:${p.color||'#ccc'};"></div>${p.name}`;
-                    opt.onclick = () => this.selectProjectFilter(p.id, p.name); container.appendChild(opt);
-                });
-            },
-            
-            // --- 6. NEW PROFILE MODAL LOGIC ---
-            toggleProfileModal(show) {
-                const modal = document.getElementById('profile-modal');
-                if(modal) {
-                    modal.style.display = show ? 'flex' : 'none';
-                    if(show) {
-                        const input = document.getElementById('input-edit-profile-id');
-                        if(input) {
-                            input.value = this.userId;
-                            input.focus();
-                        }
-                    }
-                }
-            },
-            openProfileModal() {
-                this.toggleProfileModal(true);
-            },
-            saveProfileId() {
-                const input = document.getElementById('input-edit-profile-id');
-                if(input && input.value.trim() !== "") {
-                    this.updateUserId(input.value.trim());
-                    this.toggleProfileModal(false);
-                } else {
-                     alert("El ID no puede estar vacío");
-                }
-            },
-            // --- Missing function restored ---
-            openDashboardDetail(type) {
-                const modalList = document.getElementById('db-modal-list'); const modalTitle = document.getElementById('db-modal-title');
-                const filterSection = document.getElementById('db-modal-filter-section'); const filterSelect = document.getElementById('db-modal-search');
-                
-                modalList.innerHTML = ''; this.currentDashboardListItems = [];
-                filterSelect.value = 'Todos los proyectos'; this.currentFilterValue = 'all';
-
-                if (type === 'projects') {
-                    modalTitle.textContent = 'Proyectos Activos'; filterSection.style.display = 'none';
-                    this.data.projects.filter(p => p.active).forEach(p => this.currentDashboardListItems.push({ type: 'project', data: p }));
-                } else if (type === 'today') {
-                    modalTitle.textContent = 'Tareas para Hoy'; filterSection.style.display = 'block';
-                    const today = new Date(); today.setHours(0,0,0,0);
-                    const projectsSet = new Set();
-                    this.data.projects.forEach(p => {
-                        if (p.active) {
-                            projectsSet.add(p);
-                            p.tasks.forEach(t => {
-                                if (!t.done && t.start && t.end) {
-                                    const start = new Date(t.start); start.setHours(0,0,0,0);
-                                    const end = new Date(t.end); end.setHours(23,59,59,999);
-                                    if (today >= start && today <= end) this.currentDashboardListItems.push({ type: 'task', data: t, project: p });
-                                }
-                            });
-                        }
-                    });
-                    this.populateCustomOptions(projectsSet);
-                } else if (type === 'completed') {
-                    modalTitle.textContent = 'Tareas Finalizadas'; filterSection.style.display = 'block';
-                    const projectsSet = new Set();
-                    this.data.projects.forEach(p => {
-                        p.tasks.forEach(t => {
-                            if (t.done) { this.currentDashboardListItems.push({ type: 'task', data: t, project: p }); projectsSet.add(p); }
-                        });
-                    });
-                    this.populateCustomOptions(projectsSet);
-                }
-                this.renderDashboardListItems(this.currentDashboardListItems);
-                document.getElementById('dashboard-detail-modal').style.display = 'flex';
+            clearData() { 
+                app.pendingDelete = { type: 'reset' };
+                document.getElementById('conf-modal-title').textContent = '¿Reiniciar Aplicación?';
+                document.getElementById('conf-modal-msg').textContent = 'Se borrarán todos los proyectos y tareas. Esta acción es irreversible.';
+                app.toggleConfirmationModal(true);
             },
             async callGeminiAPI(prompt) {
                 try {
@@ -1264,10 +1245,10 @@
                 } catch (error) { console.error("Gemini Error:", error); return null; }
             },
             async suggestTasksWithAI() {
-                const p = this.data.projects.find(proj => proj.id === this.currentProjectId); if(!p) return;
+                const p = app.data.projects.find(proj => proj.id === app.currentProjectId); if(!p) return;
                 const btn = document.querySelector('#btn-ai-suggest'); if(btn) btn.classList.add('loading');
                 const prompt = `Act as a project manager. For project "${p.name}", suggest 3 concise tasks. Return ONLY valid JSON array of objects: [{"text": "Title", "desc": "Desc"}]. No markdown.`;
-                const result = await this.callGeminiAPI(prompt);
+                const result = await app.callGeminiAPI(prompt);
                 if (result) {
                     try {
                         const cleanJson = result.replace(/```json|```/g, '').trim();
@@ -1275,7 +1256,7 @@
                         tasks.forEach(t => {
                             p.tasks.push({ id: Date.now() + Math.random(), text: t.text, desc: t.desc, start: new Date().toISOString().slice(0, 16), end: new Date(Date.now() + 86400000).toISOString().slice(0, 16), done: false });
                         });
-                        this.saveData(); this.renderTasks(p); 
+                        app.saveData(); app.renderTasks(p); 
                     } catch (e) { alert("Error AI"); }
                 }
                 if(btn) btn.classList.remove('loading');
@@ -1286,9 +1267,50 @@
                 if(!currentTitle) { alert("Escribe un nombre de tarea"); return; }
                 const btn = document.querySelector('#btn-ai-improve'); if(btn) btn.classList.add('loading');
                 const prompt = `Improve description for task "${currentTitle}": "${currentDesc}". Max 2 sentences, professional tone in Spanish. Return text only.`;
-                const improved = await this.callGeminiAPI(prompt);
+                const improved = await app.callGeminiAPI(prompt);
                 if(improved) descInput.value = improved.trim();
                 if(btn) btn.classList.remove('loading');
+            },
+            sendNotification(title, body) {
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification(title, { body, icon: 'https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/bell.svg' });
+                }
+            },
+            checkNotificationTriggers() {
+                const now = new Date(); const currentHour = now.getHours();
+                if (currentHour >= 8 && currentHour <= 20) {
+                    const lastReminder = localStorage.getItem('last_periodic_reminder');
+                    const fourHours = 4 * 60 * 60 * 1000;
+                    if (!lastReminder || (now.getTime() - parseInt(lastReminder)) > fourHours) {
+                        app.sendNotification("Recordatorio", "Revisa el estado de tus tareas.");
+                        localStorage.setItem('last_periodic_reminder', now.getTime());
+                    }
+                }
+                if(app.data && app.data.projects) {
+                    app.data.projects.forEach(p => {
+                        if (!p.active) return;
+                        p.tasks.forEach(t => {
+                            if (t.done) return;
+                            const start = t.start ? new Date(t.start) : null;
+                            const end = t.end ? new Date(t.end) : null;
+                            if (start && now >= start && !t.notifiedStart) {
+                                app.sendNotification("Tarea Iniciada", `"${t.text}" ha comenzado.`);
+                                t.notifiedStart = true; app.saveData(); 
+                            }
+                            if (end) {
+                                const isToday = end.getDate() === now.getDate() && end.getMonth() === now.getMonth();
+                                if (isToday && !t.notifiedLastDay) {
+                                    app.sendNotification("Último Día", `"${t.text}" vence hoy.`);
+                                    t.notifiedLastDay = true; app.saveData();
+                                }
+                                if (now > end && !t.notifiedOverdue) {
+                                    app.sendNotification("Vencida", `"${t.text}" ha expirado.`);
+                                    t.notifiedOverdue = true; app.saveData();
+                                }
+                            }
+                        });
+                    });
+                }
             }
         };
 
