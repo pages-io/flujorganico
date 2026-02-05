@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Viewport estándar para web responsive -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flujo Orgánico</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -19,16 +20,23 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
-        body { background-color: var(--bg-body); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+        
+        body { 
+            background-color: var(--bg-body); 
+            color: var(--text-main); 
+            display: flex; 
+            height: 100vh; /* Desktop: Fixed height container */
+            overflow: hidden; /* Desktop: Scroll inside main-content */
+        }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #D1D1D6; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #AEAEB2; }
 
-        .sidebar { width: 270px; background-color: var(--bg-sidebar); padding: 2rem 1.2rem; display: flex; flex-direction: column; border-right: 1px solid rgba(0,0,0,0.05); z-index: 10; }
+        .sidebar { width: 270px; background-color: var(--bg-sidebar); padding: 2rem 1.2rem; display: flex; flex-direction: column; border-right: 1px solid rgba(0,0,0,0.05); z-index: 10; flex-shrink: 0; }
         .brand { display: flex; align-items: center; gap: 12px; font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 2.5rem; padding-left: 12px; letter-spacing: -0.01em; }
-        .brand-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #007AFF, #5AC8FA); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 10px rgba(0, 122, 255, 0.2); }
+        .brand-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #007AFF, #5AC8FA); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 10px rgba(0, 122, 255, 0.2); flex-shrink: 0; }
         .nav-links { list-style: none; display: flex; flex-direction: column; gap: 6px; }
         .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; cursor: pointer; color: var(--text-secondary); transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); font-weight: 500; font-size: 0.95rem; user-select: none; }
         .nav-item:hover { background-color: rgba(0,0,0,0.03); color: var(--text-main); }
@@ -163,37 +171,77 @@
 
         /* RESPONSIVE */
         @media (max-width: 768px) {
+            /* Web-like scrolling on body for mobile */
             body { 
                 flex-direction: column; 
-                height: 100vh; /* Restore viewport height for body */
-                overflow: hidden; /* Stop body scrolling */
+                height: auto; 
+                min-height: 100vh;
+                overflow-y: auto; 
+                -webkit-overflow-scrolling: touch; 
             }
             .sidebar { 
-                position: fixed; bottom: 0; left: 0; right: 0; 
+                /* Native web layout: Top Bar */
+                position: sticky; top: 0; left: 0; right: 0; 
                 width: 100%; height: auto; 
                 flex-direction: row; padding: 10px; 
-                border-top: 1px solid var(--border); border-right: none;
-                background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
-                justify-content: space-around;
-                box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+                border-top: none; border-bottom: 1px solid var(--border); border-right: none;
+                background: rgba(255,255,255,0.98); backdrop-filter: blur(10px);
+                justify-content: flex-start;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.03);
                 z-index: 100;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                gap: 15px;
             }
-            .brand { display: none; }
-            .nav-links { flex-direction: row; width: 100%; justify-content: space-around; gap: 0; }
-            .nav-item { flex-direction: column; gap: 4px; padding: 6px; font-size: 0.65rem; }
-            .nav-item i { width: 24px; height: 24px; margin-bottom: 2px; }
+            .brand { 
+                display: flex; 
+                margin-bottom: 0; 
+                margin-right: 10px;
+                flex-shrink: 0;
+            }
+            .brand span { display: none; } /* Hide Text, keep Icon */
+            
+            .nav-links { 
+                flex-direction: row; 
+                width: auto; 
+                justify-content: flex-start; 
+                gap: 5px; 
+                flex: 1;
+            }
+            .nav-item { 
+                flex-direction: row; 
+                gap: 8px; 
+                padding: 8px 12px; 
+                font-size: 0.8rem; 
+                white-space: nowrap;
+                background: #F2F2F7; /* Slight bg for buttons on mobile */
+            }
+            .nav-item.active {
+                background: var(--primary);
+                color: white;
+            }
+            .nav-item i { width: 18px; height: 18px; margin-bottom: 0; }
+            .user-id-container { display: none; }
             
             /* Main Content Scrolling Fix */
             .main-content { 
                 padding: 1.5rem; 
-                padding-bottom: 100px; 
-                height: 100%; 
-                overflow-y: auto; 
-                -webkit-overflow-scrolling: touch; /* Momentum scroll */
+                padding-top: 20px;
+                height: auto; 
+                overflow: visible; 
             }
             .header h1 { font-size: 1.8rem; }
             
-            .modal-content { width: 95%; max-width: none; border-radius: 24px; }
+            .modal-content { 
+                width: 95%; max-width: none; border-radius: 24px; 
+                margin-top: 20px; margin-bottom: 20px; /* Space for scrolling */
+            }
+            /* Ensure modals center properly on scrollable page */
+            .modal-overlay {
+                align-items: center;
+                padding-top: 0;
+            }
+
             .project-item { flex-direction: column; align-items: flex-start; gap: 15px; }
             .project-item > div { width: 100%; justify-content: space-between; }
         }
@@ -223,7 +271,6 @@
             <li class="nav-item" data-tab="analiticas"><i data-lucide="pie-chart"></i><span>Reportes</span></li>
             <li class="nav-item" data-tab="configuracion"><i data-lucide="settings"></i><span>Ajustes</span></li>
         </ul>
-        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: auto; padding-top: 20px; text-align: center; display: none;">v46.0 Full Restore</div>
     </nav>
 
     <main class="main-content">
@@ -511,8 +558,11 @@
         };
         const apiKey = ""; 
 
+        // Use global app ID or fallback
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'administrador-proyectos-main';
+
         const app = {
-            // --- STATE ---
+            // STATE
             data: { projects: [], activityLog: [] },
             currentProjectId: null,
             editingProjectId: null,
@@ -525,11 +575,11 @@
             authUserId: null,
             db: null,
             auth: null,
-            appId: 'administrador-proyectos-main',
+            appId: appId,
             listenerUnsubscribe: null,
             colors: ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#8E8E93'],
 
-            // --- 1. INITIALIZATION ---
+            // --- 1. INITIALIZATION & CORE ---
             async init() {
                 try {
                     const firebaseApp = initializeApp(firebaseConfig);
@@ -559,8 +609,10 @@
                     app.renderDashboard(); 
                     app.renderProjects();
                     
-                    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-                        Notification.requestPermission();
+                    if ("Notification" in window) {
+                        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                            Notification.requestPermission();
+                        }
                     }
                     setInterval(() => app.checkNotificationTriggers(), 60000); 
 
@@ -568,7 +620,40 @@
                 lucide.createIcons();
             },
 
-            // --- 2. RENDER FUNCTIONS ---
+            setupFirestoreListener() {
+                if (app.listenerUnsubscribe) app.listenerUnsubscribe();
+                if (!app.userId) return;
+
+                const docRef = doc(app.db, 'artifacts', app.appId, 'public', 'data', 'files', app.userId);
+                app.listenerUnsubscribe = onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        app.data = docSnap.data();
+                        if (!app.data.projects) app.data.projects = [];
+                        if (!app.data.activityLog) app.data.activityLog = [];
+                        
+                        if(app.currentProjectId) {
+                             const p = app.data?.projects?.find(proj => proj.id === app.currentProjectId);
+                             if(p) app.renderTasks(p);
+                        }
+                        app.renderDashboard();
+                        app.renderProjects();
+                        app.renderAnalytics();
+                        app.renderCalendar();
+                    } else {
+                        // Initialize empty
+                        app.data = { projects: [], activityLog: [] };
+                        app.saveData();
+                    }
+                });
+            },
+
+            saveData() {
+                if (!app.db || !app.userId) return Promise.resolve();
+                const docRef = doc(app.db, 'artifacts', app.appId, 'public', 'data', 'files', app.userId);
+                return setDoc(docRef, app.data);
+            },
+
+            // --- 2. RENDERERS ---
             renderColorPicker() {
                 const container = document.getElementById('color-picker'); 
                 if (!container) return;
@@ -649,7 +734,9 @@
                 const percent = total === 0 ? 0 : Math.round((done/total)*100);
                 document.getElementById('detail-percent').textContent = `${percent}%`;
                 document.getElementById('detail-bar').style.width = `${percent}%`;
+
                 if(total===0) { ui.innerHTML = `<div class="empty-state" style="padding:2rem;"><p>Sin tareas</p></div>`; return; }
+
                 p.tasks.forEach(t => {
                     const status = app.getTaskStatus(t);
                     let startDate = 'Sin fecha', endDate = 'Sin fecha';
@@ -727,124 +814,7 @@
                 document.getElementById('global-completion-rate').textContent = `${globalRate}%`;
                 document.getElementById('global-completion-bar').style.width = `${globalRate}%`;
             },
-
-            openDashboardDetail(type) {
-                const modalList = document.getElementById('db-modal-list'); const modalTitle = document.getElementById('db-modal-title');
-                const filterSection = document.getElementById('db-modal-filter-section'); const filterSelect = document.getElementById('db-modal-search');
-                
-                modalList.innerHTML = ''; app.currentDashboardListItems = [];
-                filterSelect.value = 'Todos los proyectos'; app.currentFilterValue = 'all';
-
-                if (type === 'projects') {
-                    modalTitle.textContent = 'Proyectos Activos'; filterSection.style.display = 'none';
-                    app.data.projects.filter(p => p.active).forEach(p => app.currentDashboardListItems.push({ type: 'project', data: p }));
-                } else if (type === 'today') {
-                    modalTitle.textContent = 'Tareas para Hoy'; filterSection.style.display = 'block';
-                    const today = new Date(); today.setHours(0,0,0,0);
-                    const projectsSet = new Set();
-                    app.data.projects.forEach(p => {
-                        if (p.active) {
-                            projectsSet.add(p);
-                            p.tasks.forEach(t => {
-                                if (!t.done && t.start && t.end) {
-                                    const start = new Date(t.start); start.setHours(0,0,0,0);
-                                    const end = new Date(t.end); end.setHours(23,59,59,999);
-                                    if (today >= start && today <= end) app.currentDashboardListItems.push({ type: 'task', data: t, project: p });
-                                }
-                            });
-                        }
-                    });
-                    app.populateCustomOptions(projectsSet);
-                } else if (type === 'completed') {
-                    modalTitle.textContent = 'Tareas Finalizadas'; filterSection.style.display = 'block';
-                    const projectsSet = new Set();
-                    app.data.projects.forEach(p => {
-                        p.tasks.forEach(t => {
-                            if (t.done) { app.currentDashboardListItems.push({ type: 'task', data: t, project: p }); projectsSet.add(p); }
-                        });
-                    });
-                    app.populateCustomOptions(projectsSet);
-                }
-                app.renderDashboardListItems(app.currentDashboardListItems);
-                document.getElementById('dashboard-detail-modal').style.display = 'flex';
-            },
-
-            renderDashboardListItems(items) {
-                const container = document.getElementById('db-modal-list'); container.innerHTML = '';
-                if (items.length === 0) { container.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-secondary);">No se encontraron elementos.</div>'; return; }
-                items.forEach(item => {
-                    const div = document.createElement('div'); div.className = 'dashboard-list-item';
-                    if (item.type === 'project') {
-                        const p = item.data; const pColor = p.color || '#007AFF';
-                        div.innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><div style="width:10px; height:10px; border-radius:50%; background:${pColor};"></div><span class="dashboard-task-name">${p.name}</span></div><div style="font-size:0.8rem; color:var(--text-secondary);">${p.pubs} pubs/sem</div>`;
-                    } else {
-                        const t = item.data; const p = item.project; const pColor = p.color || '#007AFF';
-                        div.innerHTML = `<div style="display:flex; flex-direction:column;"><span class="dashboard-task-name">${t.text}</span><span style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">${new Date(t.end).toLocaleDateString()}</span></div><div class="dashboard-proj-tag" style="background:${pColor};">${p.name}</div>`;
-                    }
-                    container.appendChild(div);
-                });
-            },
-
-            renderFilteredList() {
-                if (app.currentFilterValue === 'all') app.renderDashboardListItems(app.currentDashboardListItems);
-                else {
-                    const filtered = app.currentDashboardListItems.filter(item => item.project && item.project.id == app.currentFilterValue);
-                    app.renderDashboardListItems(filtered);
-                }
-            },
-
-            populateCustomOptions(set) {
-                const container = document.getElementById('db-custom-options'); container.innerHTML = '';
-                const allOpt = document.createElement('div'); allOpt.className = 'custom-option'; allOpt.textContent = 'Todos los proyectos';
-                allOpt.onclick = () => app.selectProjectFilter('all', 'Todos los proyectos'); container.appendChild(allOpt);
-                set.forEach(p => {
-                    const opt = document.createElement('div'); opt.className = 'custom-option';
-                    opt.innerHTML = `<div style="width:8px; height:8px; border-radius:50%; background:${p.color||'#ccc'};"></div>${p.name}`;
-                    opt.onclick = () => app.selectProjectFilter(p.id, p.name); container.appendChild(opt);
-                });
-            },
             
-            // --- 3. FIREBASE PUBLIC SYNC ---
-            setupFirestoreListener() {
-                if (app.listenerUnsubscribe) app.listenerUnsubscribe();
-                if (!app.userId) return;
-
-                const docRef = doc(app.db, 'artifacts', app.appId, 'public', 'data', 'files', app.userId);
-                app.listenerUnsubscribe = onSnapshot(docRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        app.data = docSnap.data();
-                        if (!app.data.projects) app.data.projects = [];
-                        if (!app.data.activityLog) app.data.activityLog = [];
-                        
-                        if(app.currentProjectId) {
-                             const p = app.data?.projects?.find(proj => proj.id === app.currentProjectId);
-                             if(p) app.renderTasks(p);
-                        }
-                        app.renderDashboard();
-                        app.renderProjects();
-                        app.renderAnalytics();
-                        app.renderCalendar();
-                    } else {
-                        // Initialize empty
-                        app.data = { projects: [], activityLog: [] };
-                        app.saveData();
-                    }
-                });
-            },
-
-            saveData() {
-                if (!app.db || !app.userId) return Promise.resolve();
-                const docRef = doc(app.db, 'artifacts', app.appId, 'public', 'data', 'files', app.userId);
-                return setDoc(docRef, app.data);
-            },
-
-            logActivity(text) {
-                if (!app.data.activityLog) app.data.activityLog = [];
-                const now = new Date();
-                app.data.activityLog.unshift({ text, date: now.toISOString() });
-                if (app.data.activityLog.length > 20) app.data.activityLog.pop();
-            },
-
             // --- 4. EVENT LISTENERS ---
             setupEventListeners() {
                 document.querySelectorAll('.nav-item').forEach(item => {
@@ -859,7 +829,6 @@
                     if(el) el.addEventListener('click', fn);
                 };
 
-                // Login
                 safeAdd('btn-login-action', () => {
                     const input = document.getElementById('login-id-input');
                     if (input && input.value.trim() !== '') {
@@ -889,11 +858,7 @@
                 safeAdd('btn-ai-suggest', () => app.suggestTasksWithAI());
                 safeAdd('btn-ai-improve', () => app.improveTaskDescription());
                 
-                safeAdd('btn-change-profile-name', () => {
-                   app.openProfileModal(); 
-                });
-
-                // New Profile Modal Buttons
+                safeAdd('btn-change-profile-name', () => { app.openProfileModal(); });
                 safeAdd('btn-cancel-profile', () => app.toggleProfileModal(false));
                 safeAdd('btn-save-profile', () => app.saveProfileId());
 
@@ -979,8 +944,6 @@
                 document.getElementById('p-pubs').value = p.pubs; document.getElementById('p-active').checked = p.active;
                 app.selectedColor = p.color || '#007AFF'; app.renderColorPicker(); app.toggleProjectModal(true);
             },
-            
-            // --- 7. CRITICAL PROJECT LOGIC ---
             
             async saveProject(e) {
                 if (e) e.preventDefault(); if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -1183,7 +1146,6 @@
                 }
             },
             
-            // --- 8. NEW PROFILE MODAL LOGIC ---
             toggleProfileModal(show) {
                 const modal = document.getElementById('profile-modal');
                 if(modal) {
@@ -1209,29 +1171,49 @@
                      alert("El ID no puede estar vacío");
                 }
             },
+            openDashboardDetail(type) {
+                const modalList = document.getElementById('db-modal-list'); const modalTitle = document.getElementById('db-modal-title');
+                const filterSection = document.getElementById('db-modal-filter-section'); const filterSelect = document.getElementById('db-modal-search');
+                
+                modalList.innerHTML = ''; app.currentDashboardListItems = [];
+                filterSelect.value = 'Todos los proyectos'; app.currentFilterValue = 'all';
+
+                if (type === 'projects') {
+                    modalTitle.textContent = 'Proyectos Activos'; filterSection.style.display = 'none';
+                    app.data.projects.filter(p => p.active).forEach(p => app.currentDashboardListItems.push({ type: 'project', data: p }));
+                } else if (type === 'today') {
+                    modalTitle.textContent = 'Tareas para Hoy'; filterSection.style.display = 'block';
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const projectsSet = new Set();
+                    app.data.projects.forEach(p => {
+                        if (p.active) {
+                            projectsSet.add(p);
+                            p.tasks.forEach(t => {
+                                if (!t.done && t.start && t.end) {
+                                    const start = new Date(t.start); start.setHours(0,0,0,0);
+                                    const end = new Date(t.end); end.setHours(23,59,59,999);
+                                    if (today >= start && today <= end) app.currentDashboardListItems.push({ type: 'task', data: t, project: p });
+                                }
+                            });
+                        }
+                    });
+                    app.populateCustomOptions(projectsSet);
+                } else if (type === 'completed') {
+                    modalTitle.textContent = 'Tareas Finalizadas'; filterSection.style.display = 'block';
+                    const projectsSet = new Set();
+                    app.data.projects.forEach(p => {
+                        p.tasks.forEach(t => {
+                            if (t.done) { app.currentDashboardListItems.push({ type: 'task', data: t, project: p }); projectsSet.add(p); }
+                        });
+                    });
+                    app.populateCustomOptions(projectsSet);
+                }
+                app.renderDashboardListItems(app.currentDashboardListItems);
+                document.getElementById('dashboard-detail-modal').style.display = 'flex';
+            },
             toggleDropdown(show) {
                 const list = document.getElementById('db-custom-options');
                 if(show) { list.classList.add('show'); document.getElementById('db-modal-search').focus(); } else list.classList.remove('show');
-            },
-            selectProjectFilter(id, name) {
-                document.getElementById('db-modal-search').value = name; 
-                app.currentFilterValue = id;
-                app.toggleDropdown(false); 
-                app.renderFilteredList();
-            },
-            filterDropdownOptions() {
-                const input = document.getElementById('db-modal-search'); const filter = input.value.toLowerCase();
-                const options = document.getElementsByClassName('custom-option');
-                for (let i = 0; i < options.length; i++) {
-                    const txtValue = options[i].textContent || options[i].innerText;
-                    options[i].style.display = txtValue.toLowerCase().indexOf(filter) > -1 ? "" : "none";
-                }
-            },
-            clearData() { 
-                app.pendingDelete = { type: 'reset' };
-                document.getElementById('conf-modal-title').textContent = '¿Reiniciar Aplicación?';
-                document.getElementById('conf-modal-msg').textContent = 'Se borrarán todos los proyectos y tareas. Esta acción es irreversible.';
-                app.toggleConfirmationModal(true);
             },
             async callGeminiAPI(prompt) {
                 try {
