@@ -370,11 +370,28 @@
         </section>
 
         <section id="categorias" class="section">
-            <div class="header">
-                <div><div class="header-subtitle">ORGANIZACIÓN</div><h1>Categorías</h1></div>
-                <button class="btn" id="btn-new-category"><i data-lucide="plus" style="width: 18px; margin-right: 5px;"></i> Nueva</button>
+            <div id="categories-view-list">
+                <div class="header">
+                    <div><div class="header-subtitle">ORGANIZACIÓN</div><h1>Categorías</h1></div>
+                    <button class="btn" id="btn-new-category"><i data-lucide="plus" style="width: 18px; margin-right: 5px;"></i> Nueva</button>
+                </div>
+                <div id="category-list" class="project-list"></div>
             </div>
-            <div id="category-list" class="project-list"></div>
+
+            <div id="categories-view-detail" style="display:none;">
+                <div class="back-nav" id="btn-back-categories"><i data-lucide="chevron-left" style="width: 18px; margin-right: 2px;"></i> Categorías</div>
+                <div class="header">
+                    <div>
+                        <div class="header-subtitle" id="cat-detail-count">0 SUBCATEGORÍAS</div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <h1 id="cat-detail-title" style="margin-bottom:0; word-break:break-word;">Categoría</h1>
+                            <button class="btn-ghost" id="btn-edit-category-detail" title="Editar categoría"><i data-lucide="pencil" style="width: 18px;"></i></button>
+                        </div>
+                    </div>
+                    <button class="btn" id="btn-new-subcategory"><i data-lucide="plus" style="width: 18px; margin-right: 5px;"></i> Subcategoría</button>
+                </div>
+                <div id="subcategory-list" class="project-list"></div>
+            </div>
         </section>
 
         <section id="analiticas" class="section">
@@ -505,6 +522,21 @@
             </div>
         </div>
 
+        <div id="subcategory-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h2 id="subcategory-modal-title" style="margin-bottom: 0.5rem; font-size: 1.5rem;">Nueva Subcategoría</h2>
+                <p style="color:var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">Estará disponible al crear tareas.</p>
+                <form id="subcategory-form" novalidate onsubmit="return false;">
+                    <label>NOMBRE DE LA SUBCATEGORÍA</label>
+                    <input type="text" id="sc-name" class="form-input" placeholder="Ej: Reels" maxlength="40">
+                    <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:30px;">
+                        <button type="button" class="btn" style="background:transparent; color:var(--text-secondary); box-shadow:none; padding: 10px 20px;" id="btn-cancel-subcategory">Cancelar</button>
+                        <button type="button" class="btn" style="background: var(--primary);" id="btn-save-subcategory">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div id="task-modal" class="modal-overlay">
             <div class="modal-content">
                 <h2 id="task-modal-title" style="margin-bottom: 0.5rem; font-size: 1.5rem;">Nueva Tarea</h2>
@@ -517,6 +549,9 @@
                         <button type="button" class="btn-mini-ai" id="btn-ai-improve" title="Mejorar con IA"><i data-lucide="sparkles" style="width:14px; height:14px;"></i> Mejorar</button>
                     </div>
                     <textarea id="t-desc" class="form-textarea" rows="3" placeholder="Detalles..."></textarea>
+                    <label>SUBCATEGORÍA</label>
+                    <select id="t-subcategory" class="form-input"></select>
+                    <div class="field-hint" id="t-subcategory-hint" style="display:none;">Aún no hay subcategorías. Créalas entrando a una categoría en la pestaña "Categorías".</div>
                     <div style="display: flex; flex-direction: column; gap: 15px;">
                         <div><label>INICIO</label><input type="datetime-local" id="t-start" class="form-input"></div>
                         <div><label>FIN</label><input type="datetime-local" id="t-end" class="form-input"></div>
@@ -607,6 +642,8 @@
             editingProjectId: null,
             editingTaskId: null,
             editingCategoryId: null,
+            currentCategoryId: null,
+            editingSubcategoryId: null,
             selectedCatColor: '#007AFF',
             pendingDelete: null,
             selectedColor: '#007AFF',
@@ -678,10 +715,10 @@
             updateUserId(newId) {
                 app.userId = newId;
                 localStorage.setItem('flujo_custom_id', newId);
-                app.currentProjectId = null;
+                app.currentProjectId = null; app.currentCategoryId = null;
                 app.data = app.normalizeData(app.loadLocalData());
                 app.renderUserId();
-                app.closeProject();
+                app.closeProject(); app.closeCategory();
                 app.renderAll();
                 app.setupFirestoreListener();
             },
@@ -707,6 +744,7 @@
                 if (!Array.isArray(d.projects)) d.projects = [];
                 if (!Array.isArray(d.activityLog)) d.activityLog = [];
                 if (!Array.isArray(d.categories)) d.categories = [];
+                d.categories.forEach(c => { if (!Array.isArray(c.subcategories)) c.subcategories = []; });
                 d.projects.forEach(p => { if (!Array.isArray(p.tasks)) p.tasks = []; });
                 return d;
             },
@@ -716,6 +754,7 @@
                     app.renderDashboard();
                     app.renderProjects();
                     app.renderCategories();
+                    if (app.currentCategoryId) app.renderCategoryDetail();
                     app.renderAnalytics();
                     app.renderCalendar();
                     if (app.currentProjectId) {
@@ -882,10 +921,11 @@
                 cats.forEach(c => {
                     const col = c.color || '#007AFF';
                     const count = (app.data.projects || []).filter(p => String(p.categoryId) === String(c.id)).length;
-                    const div = document.createElement('div'); div.className = 'project-item cat-item'; div.style.cursor = 'default';
-                    div.innerHTML = `<div class="project-info-left"><div class="project-icon-box" style="background:${app.hexToRgba(col,0.12)}; color:${col};"><i data-lucide="tag" style="width:20px;"></i></div><div><h3 style="font-size:1rem;font-weight:600;word-break:break-word;">${app.esc(c.name)}</h3><div style="color:var(--text-secondary);font-size:0.85rem;margin-top:2px;">${count} ${count === 1 ? 'proyecto' : 'proyectos'}</div></div></div><div style="display:flex;align-items:center;gap:6px;"><button class="btn-ghost edit-cat-btn" title="Editar"><i data-lucide="pencil" style="width:18px;"></i></button><button class="btn-ghost danger delete-cat-btn" title="Eliminar"><i data-lucide="trash-2" style="width:18px;"></i></button></div>`;
-                    div.querySelector('.edit-cat-btn').addEventListener('click', () => app.openEditCategoryModal(c.id));
-                    div.querySelector('.delete-cat-btn').addEventListener('click', () => app.deleteCategory(c.id));
+                    const div = document.createElement('div'); div.className = 'project-item cat-item';
+                    div.innerHTML = `<div class="project-info-left"><div class="project-icon-box" style="background:${app.hexToRgba(col,0.12)}; color:${col};"><i data-lucide="tag" style="width:20px;"></i></div><div><h3 style="font-size:1rem;font-weight:600;word-break:break-word;">${app.esc(c.name)}</h3><div style="color:var(--text-secondary);font-size:0.85rem;margin-top:2px;">${(c.subcategories || []).length} ${(c.subcategories || []).length === 1 ? 'subcategoría' : 'subcategorías'} · ${count} ${count === 1 ? 'proyecto' : 'proyectos'}</div></div></div><div style="display:flex;align-items:center;gap:6px;"><button class="btn-ghost edit-cat-btn" title="Editar"><i data-lucide="pencil" style="width:18px;"></i></button><button class="btn-ghost danger delete-cat-btn" title="Eliminar"><i data-lucide="trash-2" style="width:18px;"></i></button><i data-lucide="chevron-right" style="color:#D2D2D7; width:20px;"></i></div>`;
+                    div.addEventListener('click', () => app.openCategory(c.id));
+                    div.querySelector('.edit-cat-btn').addEventListener('click', (e) => { e.stopPropagation(); app.openEditCategoryModal(c.id); });
+                    div.querySelector('.delete-cat-btn').addEventListener('click', (e) => { e.stopPropagation(); app.deleteCategory(c.id); });
                     list.appendChild(div);
                 });
                 try { lucide.createIcons(); } catch (e) {}
@@ -928,6 +968,7 @@
                     await app.saveData();
                     app.toggleCategoryModal(false);
                     app.renderCategories(); app.renderProjects(); app.renderDashboard();
+                    if (app.currentCategoryId) app.renderCategoryDetail();
                     if (app.currentProjectId) { const p = app.data.projects.find(pr => pr.id === app.currentProjectId); if (p) app.updateDetailCategory(p); }
                 } catch (err) { alert('Error al guardar categoría: ' + err.message); }
                 finally { btn.disabled = false; }
@@ -935,12 +976,140 @@
             deleteCategory(id) {
                 const c = app.getCategory(id); if (!c) return;
                 const count = (app.data.projects || []).filter(p => String(p.categoryId) === String(id)).length;
+                const nSubs = (c.subcategories || []).length;
                 app.pendingDelete = { type: 'category', id: c.id };
                 document.getElementById('conf-modal-title').textContent = '¿Eliminar Categoría?';
-                document.getElementById('conf-modal-msg').textContent = count > 0
+                let msg = count > 0
                     ? `${count} ${count === 1 ? 'proyecto quedará' : 'proyectos quedarán'} sin categoría. Los proyectos no se eliminan.`
                     : 'Se eliminará permanentemente.';
+                if (nSubs > 0) msg += ` También se eliminarán sus ${nSubs} ${nSubs === 1 ? 'subcategoría' : 'subcategorías'}.`;
+                document.getElementById('conf-modal-msg').textContent = msg;
                 app.toggleConfirmationModal(true);
+            },
+
+            // --- SUBCATEGORÍAS ---
+            findSubcategory(id) {
+                if (id == null || id === '') return null;
+                for (const c of (app.data.categories || [])) {
+                    const sub = (c.subcategories || []).find(x => String(x.id) === String(id));
+                    if (sub) return { cat: c, sub };
+                }
+                return null;
+            },
+            subcategoryChipHTML(id) {
+                const f = app.findSubcategory(id); if (!f) return '';
+                const col = f.cat.color || '#007AFF';
+                return `<span class="cat-chip" style="margin-top:0; background:${app.hexToRgba(col, 0.12)}; color:${col};"><i class="dot" style="background:${col};"></i>${app.esc(f.cat.name)} › ${app.esc(f.sub.name)}</span>`;
+            },
+            openCategory(id) {
+                const c = app.getCategory(id); if (!c) return;
+                app.currentCategoryId = c.id;
+                document.getElementById('categories-view-list').style.display = 'none';
+                document.getElementById('categories-view-detail').style.display = 'block';
+                app.renderCategoryDetail();
+                const mc = document.querySelector('.main-content'); if (mc) mc.scrollTop = 0;
+            },
+            closeCategory() {
+                app.currentCategoryId = null;
+                document.getElementById('categories-view-detail').style.display = 'none';
+                document.getElementById('categories-view-list').style.display = 'block';
+                app.renderCategories();
+            },
+            renderCategoryDetail() {
+                const c = app.getCategory(app.currentCategoryId);
+                if (!c) { app.closeCategory(); return; }
+                const subs = c.subcategories || [];
+                document.getElementById('cat-detail-title').textContent = c.name;
+                document.getElementById('cat-detail-count').textContent = `${subs.length} ${subs.length === 1 ? 'SUBCATEGORÍA' : 'SUBCATEGORÍAS'}`;
+                const list = document.getElementById('subcategory-list'); list.innerHTML = '';
+                if (subs.length === 0) {
+                    list.innerHTML = `<div class="empty-state" style="padding: 2rem;"><i data-lucide="tag" style="width:48px;height:48px; margin-bottom: 10px; opacity: 0.5;"></i><p>Sin subcategorías. Crea la primera con el botón "Subcategoría".</p></div>`;
+                } else {
+                    const col = c.color || '#007AFF';
+                    subs.forEach(sc => {
+                        let used = 0;
+                        (app.data.projects || []).forEach(p => p.tasks.forEach(t => { if (String(t.subcategoryId) === String(sc.id)) used++; }));
+                        const div = document.createElement('div'); div.className = 'project-item cat-item'; div.style.cursor = 'default';
+                        div.innerHTML = `<div class="project-info-left"><div class="project-icon-box" style="background:${app.hexToRgba(col,0.12)}; color:${col};"><i data-lucide="corner-down-right" style="width:20px;"></i></div><div><h3 style="font-size:1rem;font-weight:600;word-break:break-word;">${app.esc(sc.name)}</h3><div style="color:var(--text-secondary);font-size:0.85rem;margin-top:2px;">${used} ${used === 1 ? 'tarea' : 'tareas'}</div></div></div><div style="display:flex;align-items:center;gap:6px;"><button class="btn-ghost edit-sub-btn" title="Editar"><i data-lucide="pencil" style="width:18px;"></i></button><button class="btn-ghost danger delete-sub-btn" title="Eliminar"><i data-lucide="trash-2" style="width:18px;"></i></button></div>`;
+                        div.querySelector('.edit-sub-btn').addEventListener('click', () => app.openEditSubcategoryModal(sc.id));
+                        div.querySelector('.delete-sub-btn').addEventListener('click', () => app.deleteSubcategory(sc.id));
+                        list.appendChild(div);
+                    });
+                }
+                try { lucide.createIcons(); } catch (e) {}
+            },
+            toggleSubcategoryModal(show) {
+                if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+                const modal = document.getElementById('subcategory-modal'); if (!modal) return;
+                modal.style.display = show ? 'flex' : 'none';
+                if (!show) app.editingSubcategoryId = null;
+            },
+            openCreateSubcategoryModal() {
+                if (!app.getCategory(app.currentCategoryId)) return;
+                app.editingSubcategoryId = null;
+                document.getElementById('subcategory-modal-title').textContent = 'Nueva Subcategoría';
+                document.getElementById('sc-name').value = '';
+                app.toggleSubcategoryModal(true);
+            },
+            openEditSubcategoryModal(subId) {
+                const c = app.getCategory(app.currentCategoryId); if (!c) return;
+                const sc = c.subcategories.find(x => String(x.id) === String(subId)); if (!sc) return;
+                app.editingSubcategoryId = sc.id;
+                document.getElementById('subcategory-modal-title').textContent = 'Editar Subcategoría';
+                document.getElementById('sc-name').value = sc.name;
+                app.toggleSubcategoryModal(true);
+            },
+            async saveSubcategory() {
+                const c = app.getCategory(app.currentCategoryId); if (!c) return;
+                const name = document.getElementById('sc-name').value.trim();
+                if (!name) { alert('Escribe un nombre para la subcategoría'); return; }
+                if (!Array.isArray(c.subcategories)) c.subcategories = [];
+                const dup = c.subcategories.find(x => x.name.toLowerCase() === name.toLowerCase() && x.id !== app.editingSubcategoryId);
+                if (dup) { alert('Ya existe una subcategoría con ese nombre en esta categoría'); return; }
+                const btn = document.getElementById('btn-save-subcategory'); btn.disabled = true;
+                try {
+                    if (app.editingSubcategoryId != null) {
+                        const sc = c.subcategories.find(x => x.id === app.editingSubcategoryId);
+                        if (sc) { sc.name = name; app.logActivity(`Se ha editado la subcategoría "${name}" en "${c.name}"`); }
+                    } else {
+                        c.subcategories.push({ id: Date.now(), name });
+                        app.logActivity(`Se ha creado la subcategoría "${name}" en "${c.name}"`);
+                    }
+                    await app.saveData();
+                    app.toggleSubcategoryModal(false);
+                    app.renderCategoryDetail(); app.renderDashboard();
+                    if (app.currentProjectId) { const p = app.data.projects.find(pr => pr.id === app.currentProjectId); if (p) app.renderTasks(p); }
+                } catch (err) { alert('Error al guardar subcategoría: ' + err.message); }
+                finally { btn.disabled = false; }
+            },
+            deleteSubcategory(subId) {
+                const c = app.getCategory(app.currentCategoryId); if (!c) return;
+                const sc = c.subcategories.find(x => String(x.id) === String(subId)); if (!sc) return;
+                let used = 0;
+                (app.data.projects || []).forEach(p => p.tasks.forEach(t => { if (String(t.subcategoryId) === String(sc.id)) used++; }));
+                app.pendingDelete = { type: 'subcategory', id: sc.id, catId: c.id };
+                document.getElementById('conf-modal-title').textContent = '¿Eliminar Subcategoría?';
+                document.getElementById('conf-modal-msg').textContent = used > 0
+                    ? `${used} ${used === 1 ? 'tarea quedará' : 'tareas quedarán'} sin subcategoría. Las tareas no se eliminan.`
+                    : 'Se eliminará permanentemente.';
+                app.toggleConfirmationModal(true);
+            },
+            populateSubcategorySelect(selectedId) {
+                const sel = document.getElementById('t-subcategory'); if (!sel) return;
+                const cats = (app.data.categories || []).slice();
+                const cur = (app.data.projects || []).find(pr => pr.id === app.currentProjectId);
+                if (cur && cur.categoryId != null) cats.sort((a, b) => (String(b.id) === String(cur.categoryId)) - (String(a.id) === String(cur.categoryId)));
+                sel.innerHTML = '';
+                const none = document.createElement('option'); none.value = ''; none.textContent = 'Sin subcategoría'; sel.appendChild(none);
+                let total = 0;
+                cats.forEach(c => {
+                    const subs = c.subcategories || []; if (!subs.length) return;
+                    const g = document.createElement('optgroup'); g.label = c.name;
+                    subs.forEach(sc => { const o = document.createElement('option'); o.value = String(sc.id); o.textContent = sc.name; g.appendChild(o); total++; });
+                    sel.appendChild(g);
+                });
+                sel.value = (selectedId != null && app.findSubcategory(selectedId)) ? String(selectedId) : '';
+                const hint = document.getElementById('t-subcategory-hint'); if (hint) hint.style.display = total ? 'none' : 'block';
             },
 
             renderColorPicker() {
@@ -1028,11 +1197,11 @@
 
                 p.tasks.forEach(t => {
                     const status = app.getTaskStatus(t);
-                    let startDate = 'Sin fecha', endDate = 'Sin fecha';
+                    let startDate = 'Sin fecha', endDate = 'Sin fecha'; const subChip = app.subcategoryChipHTML(t.subcategoryId);
                     if (t.start && !isNaN(new Date(t.start).getTime())) startDate = new Date(t.start).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
                     if (t.end && !isNaN(new Date(t.end).getTime())) endDate = new Date(t.end).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
                     const li = document.createElement('li'); li.className = 'task-item-ui';
-                    li.innerHTML = `<div class="checkbox-wrapper" style="cursor:pointer;"><input type="checkbox" class="ios-checkbox" ${t.done?'checked':''} readonly></div><div style="flex:1;"><div class="task-title-row"><span class="task-text ${t.done?'completed':''}" style="font-weight:600;">${t.text}</span><div style="display:flex;align-items:center;gap:8px;">${status.isOverdue ? `<span style="color:var(--danger);font-size:0.7rem;font-weight:600;display:flex;align-items:center;gap:4px;"><i data-lucide="alert-circle" style="width:14px;"></i> Verificar</span>`:''}<span class="task-status-badge ${status.class}">${status.label}</span></div></div><div style="font-size:0.9rem;color:#555;margin-top:4px;">${t.desc||''}</div><div class="task-meta-row"><span><i data-lucide="clock" style="width:12px;vertical-align:middle;"></i> ${startDate}</span><span><i data-lucide="flag" style="width:12px;vertical-align:middle;"></i> ${endDate}</span></div></div><div style="display:flex;gap:5px;"><button class="btn-ghost edit-task-btn"><i data-lucide="pencil" style="width:16px;color:#007AFF;"></i></button><button class="btn-ghost danger delete-task-btn"><i data-lucide="trash-2" style="width:16px;"></i></button></div>`;
+                    li.innerHTML = `<div class="checkbox-wrapper" style="cursor:pointer;"><input type="checkbox" class="ios-checkbox" ${t.done?'checked':''} readonly></div><div style="flex:1;"><div class="task-title-row"><span class="task-text ${t.done?'completed':''}" style="font-weight:600;">${t.text}</span><div style="display:flex;align-items:center;gap:8px;">${status.isOverdue ? `<span style="color:var(--danger);font-size:0.7rem;font-weight:600;display:flex;align-items:center;gap:4px;"><i data-lucide="alert-circle" style="width:14px;"></i> Verificar</span>`:''}<span class="task-status-badge ${status.class}">${status.label}</span></div></div><div style="font-size:0.9rem;color:#555;margin-top:4px;">${t.desc||''}</div><div class="task-meta-row"><span><i data-lucide="clock" style="width:12px;vertical-align:middle;"></i> ${startDate}</span><span><i data-lucide="flag" style="width:12px;vertical-align:middle;"></i> ${endDate}</span>${subChip}</div></div><div style="display:flex;gap:5px;"><button class="btn-ghost edit-task-btn"><i data-lucide="pencil" style="width:16px;color:#007AFF;"></i></button><button class="btn-ghost danger delete-task-btn"><i data-lucide="trash-2" style="width:16px;"></i></button></div>`;
                     li.querySelector('.checkbox-wrapper').onclick = () => app.toggleTaskDone(t.id);
                     li.querySelector('.edit-task-btn').onclick = () => app.openEditTaskModal(t.id);
                     li.querySelector('.delete-task-btn').onclick = () => app.deleteTask(t.id);
@@ -1157,6 +1326,11 @@
                 safeAdd('btn-save-profile', () => app.saveProfileId());
 
                 safeAdd('btn-new-category', () => app.openCreateCategoryModal());
+                safeAdd('btn-back-categories', () => app.closeCategory());
+                safeAdd('btn-edit-category-detail', () => app.openEditCategoryModal(app.currentCategoryId));
+                safeAdd('btn-new-subcategory', () => app.openCreateSubcategoryModal());
+                safeAdd('btn-save-subcategory', () => app.saveSubcategory());
+                safeAdd('btn-cancel-subcategory', () => app.toggleSubcategoryModal(false));
                 safeAdd('btn-save-category', () => app.saveCategory());
                 safeAdd('btn-cancel-category', () => app.toggleCategoryModal(false));
                 safeAdd('btn-close-sync-banner', () => app.hideSyncWarning());
@@ -1168,6 +1342,7 @@
                 onEnter('input-edit-profile-id', 'btn-save-profile');
                 onEnter('p-name', 'btn-save-project');
                 onEnter('c-name', 'btn-save-category');
+                onEnter('sc-name', 'btn-save-subcategory');
                 onEnter('t-name', 'btn-save-task');
 
                 safeAdd('btn-logout', () => { localStorage.removeItem('flujo_custom_id'); location.reload(); });
@@ -1192,10 +1367,10 @@
             updateUserId(newId) {
                 app.userId = newId;
                 localStorage.setItem('flujo_custom_id', newId);
-                app.currentProjectId = null;
+                app.currentProjectId = null; app.currentCategoryId = null;
                 app.data = app.normalizeData(app.loadLocalData());
                 app.renderUserId();
-                app.closeProject();
+                app.closeProject(); app.closeCategory();
                 app.renderAll();
                 app.setupFirestoreListener();
             },
@@ -1234,7 +1409,12 @@
 
                 const mc = document.querySelector('.main-content'); if (mc) mc.scrollTop = 0;
                 if (tabId === 'dashboard') app.renderDashboard();
-                if (tabId === 'categorias') app.renderCategories();
+                if (tabId === 'categorias') {
+                    const inDetail = app.currentCategoryId && app.getCategory(app.currentCategoryId);
+                    document.getElementById('categories-view-list').style.display = inDetail ? 'none' : 'block';
+                    document.getElementById('categories-view-detail').style.display = inDetail ? 'block' : 'none';
+                    if (inDetail) app.renderCategoryDetail(); else { app.currentCategoryId = null; app.renderCategories(); }
+                }
                 if (tabId === 'calendario') app.renderCalendar();
                 if (tabId === 'analiticas') app.renderAnalytics();
                 setTimeout(() => lucide.createIcons(), 50);
@@ -1332,6 +1512,7 @@
                 const now = new Date(); const tzOffset = now.getTimezoneOffset() * 60000;
                 const nowStr = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16);
                 document.getElementById('t-start').value = nowStr; document.getElementById('t-end').value = nowStr;
+                app.populateSubcategorySelect(null);
                 app.toggleTaskModal(true);
             },
             openEditTaskModal(taskId) {
@@ -1340,6 +1521,7 @@
                 document.getElementById('task-modal-title').textContent = 'Editar Tarea';
                 document.getElementById('t-name').value = task.text; document.getElementById('t-desc').value = task.desc;
                 document.getElementById('t-start').value = task.start; document.getElementById('t-end').value = task.end;
+                app.populateSubcategorySelect(task.subcategoryId);
                 app.toggleTaskModal(true);
             },
             async saveTask(e) {
@@ -1347,6 +1529,7 @@
                 if (!app.currentProjectId) return;
                 const name = document.getElementById('t-name').value; const desc = document.getElementById('t-desc').value;
                 const start = document.getElementById('t-start').value; const end = document.getElementById('t-end').value;
+                const subSel = document.getElementById('t-subcategory'); const subcategoryId = (subSel && subSel.value) ? Number(subSel.value) : null;
                 if(!name || !start || !end) { alert("Completa los campos"); return; }
                 
                 const btn = document.getElementById('btn-save-task');
@@ -1357,10 +1540,10 @@
                     let logMsg = "";
                     if (app.editingTaskId) {
                         const task = p.tasks.find(t => t.id === app.editingTaskId);
-                        if(task) { task.text = name; task.desc = desc; task.start = start; task.end = end; task.notifiedStart = false; task.notifiedLastDay = false; }
+                        if(task) { task.text = name; task.desc = desc; task.start = start; task.end = end; task.subcategoryId = subcategoryId; task.notifiedStart = false; task.notifiedLastDay = false; }
                         logMsg = `Se ha editado la tarea "${name}" en "${p.name}"`;
                     } else {
-                        p.tasks.push({ id: Date.now(), text: name, desc, start, end, done: false });
+                        p.tasks.push({ id: Date.now(), text: name, desc, start, end, subcategoryId, done: false });
                         app.sendNotification("Nueva Tarea", name);
                         logMsg = `Se ha creado la tarea "${name}" en "${p.name}"`;
                     }
@@ -1386,9 +1569,20 @@
                 if (app.pendingDelete.type === 'category') {
                     const c = app.getCategory(app.pendingDelete.id);
                     if (c) logMsg = `Se ha eliminado la categoría "${c.name}"`;
+                    const subIds = c ? (c.subcategories || []).map(x => String(x.id)) : [];
+                    app.data.projects.forEach(p => p.tasks.forEach(t => { if (subIds.includes(String(t.subcategoryId))) t.subcategoryId = null; }));
+                    if (String(app.currentCategoryId) === String(app.pendingDelete.id)) app.closeCategory();
                     app.data.categories = (app.data.categories || []).filter(x => String(x.id) !== String(app.pendingDelete.id));
                     app.data.projects.forEach(p => { if (String(p.categoryId) === String(app.pendingDelete.id)) p.categoryId = null; });
                     if (app.currentProjectId) { const cp = app.data.projects.find(pr => pr.id === app.currentProjectId); if (cp) app.updateDetailCategory(cp); }
+                } else if (app.pendingDelete.type === 'subcategory') {
+                    const c = app.getCategory(app.pendingDelete.catId);
+                    if (c) {
+                        const sc = c.subcategories.find(x => String(x.id) === String(app.pendingDelete.id));
+                        if (sc) logMsg = `Se ha eliminado la subcategoría "${sc.name}" de "${c.name}"`;
+                        c.subcategories = c.subcategories.filter(x => String(x.id) !== String(app.pendingDelete.id));
+                    }
+                    app.data.projects.forEach(p => p.tasks.forEach(t => { if (String(t.subcategoryId) === String(app.pendingDelete.id)) t.subcategoryId = null; }));
                 } else if (app.pendingDelete.type === 'project') {
                     const p = app.data.projects.find(p => p.id === app.pendingDelete.id);
                     if(p) logMsg = `Se ha eliminado el proyecto "${p.name}"`;
@@ -1404,7 +1598,10 @@
                     }
                 }
                 app.logActivity(logMsg);
-                await app.saveData(); app.renderProjects(); app.renderCategories(); app.renderDashboard(); app.toggleConfirmationModal(false);
+                await app.saveData(); app.renderProjects(); app.renderCategories(); app.renderDashboard();
+                if (app.currentCategoryId) app.renderCategoryDetail();
+                if (app.currentProjectId) { const cp2 = app.data.projects.find(pr => pr.id === app.currentProjectId); if (cp2) app.renderTasks(cp2); }
+                app.toggleConfirmationModal(false);
             },
             
             openProject(id) {
