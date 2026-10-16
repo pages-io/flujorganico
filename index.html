@@ -173,6 +173,11 @@
         .task-title-row { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
         .task-text { word-break: break-word; }
 
+        select.form-input { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2386868B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px; cursor: pointer; }
+        .cat-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 100px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em; margin-top: 6px; }
+        .cat-chip i.dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+        .field-hint { font-size: 0.8rem; color: var(--text-secondary); margin: -0.6rem 0 1.2rem; }
+
         /* Aviso de sincronización */
         #sync-banner { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 12px; right: 12px; max-width: 560px; margin: 0 auto; background: #FFF4E5; color: #8A4B00; border: 1px solid rgba(255,149,0,0.35); border-radius: 14px; padding: 12px 14px; font-size: 0.85rem; line-height: 1.4; box-shadow: var(--shadow-lg); z-index: 3000; display: none; align-items: flex-start; gap: 10px; }
         #sync-banner button { background: none; border: none; cursor: pointer; color: inherit; font-size: 1.1rem; line-height: 1; padding: 0 2px; }
@@ -215,6 +220,10 @@
             .detail-actions > button { flex: 1; }
             .project-item { flex-direction: column; align-items: flex-start; gap: 12px; padding: 1rem; }
             .project-item > div { width: 100%; justify-content: space-between; }
+            .project-item.cat-item { flex-direction: row; align-items: center; gap: 8px; }
+            .project-item.cat-item > div { width: auto; }
+            .project-item.cat-item > div:first-child { flex: 1; min-width: 0; justify-content: flex-start; }
+            .project-item.cat-item > div:last-child { justify-content: flex-end; }
             .task-item-ui { padding: 1rem; gap: 12px; }
             .task-title-row { flex-direction: column; }
 
@@ -267,6 +276,7 @@
             <li class="nav-item active" data-tab="dashboard"><i data-lucide="layout-grid"></i><span>Resumen</span></li>
             <li class="nav-item" data-tab="proyectos"><i data-lucide="layers"></i><span>Proyectos</span></li>
             <li class="nav-item" data-tab="calendario"><i data-lucide="calendar"></i><span>Calendario</span></li>
+            <li class="nav-item" data-tab="categorias"><i data-lucide="tags"></i><span>Categorías</span></li>
             <li class="nav-item" data-tab="analiticas"><i data-lucide="pie-chart"></i><span>Reportes</span></li>
             <li class="nav-item" data-tab="configuracion"><i data-lucide="settings"></i><span>Ajustes</span></li>
         </ul>
@@ -326,6 +336,7 @@
                                 <span class="project-chip" style="background: #F2F2F7; color: var(--text-secondary); font-weight: 500;"><i data-lucide="calendar" style="width: 14px; margin-right: 6px;"></i> Contratado: <span id="detail-contract"></span></span>
                                 <span class="project-chip" style="background: #F2F2F7; color: var(--text-secondary); font-weight: 500;"><i data-lucide="file-text" style="width: 14px; margin-right: 6px;"></i> <span id="detail-pubs">0</span> / semana</span>
                                 <span id="detail-badge" class="badge"></span>
+                                <span id="detail-category" class="cat-chip" style="display:none;"></span>
                             </div>
                         </div>
                         <div class="week-card" style="text-align:right; background:white; padding:10px 15px; border-radius:14px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border:1px solid var(--border); min-width: 140px;">
@@ -356,6 +367,14 @@
                 <h3 id="calendar-month-name" style="color: var(--primary); font-size: 1.4rem; font-weight: 600;"></h3>
             </div>
             <div class="calendar-grid" id="calendar-grid"></div>
+        </section>
+
+        <section id="categorias" class="section">
+            <div class="header">
+                <div><div class="header-subtitle">ORGANIZACIÓN</div><h1>Categorías</h1></div>
+                <button class="btn" id="btn-new-category"><i data-lucide="plus" style="width: 18px; margin-right: 5px;"></i> Nueva</button>
+            </div>
+            <div id="category-list" class="project-list"></div>
         </section>
 
         <section id="analiticas" class="section">
@@ -432,6 +451,9 @@
                 <form id="project-form" novalidate onsubmit="return false;">
                     <label>NOMBRE DEL PROYECTO</label>
                     <input type="text" id="p-name" class="form-input" placeholder="Ej: Redes Sociales Cliente A">
+                    <label>CATEGORÍA</label>
+                    <select id="p-category" class="form-input"></select>
+                    <div class="field-hint" id="p-category-hint" style="display:none;">Aún no tienes categorías. Créalas en la pestaña "Categorías".</div>
                     <label>COLOR</label>
                     <div class="color-picker-container" id="color-picker"></div>
                     <div class="form-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -461,6 +483,23 @@
                     <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:30px;">
                         <button class="btn" style="background:transparent; color:var(--text-secondary); box-shadow:none; padding: 10px 20px;" id="btn-cancel-profile">Cancelar</button>
                         <button class="btn" style="background: var(--primary);" id="btn-save-profile">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="category-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h2 id="category-modal-title" style="margin-bottom: 0.5rem; font-size: 1.5rem;">Nueva Categoría</h2>
+                <p style="color:var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">Agrupa tus proyectos por tipo, cliente o área.</p>
+                <form id="category-form" novalidate onsubmit="return false;">
+                    <label>NOMBRE DE LA CATEGORÍA</label>
+                    <input type="text" id="c-name" class="form-input" placeholder="Ej: Redes sociales" maxlength="40">
+                    <label>COLOR</label>
+                    <div class="color-picker-container" id="cat-color-picker"></div>
+                    <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:30px;">
+                        <button type="button" class="btn" style="background:transparent; color:var(--text-secondary); box-shadow:none; padding: 10px 20px;" id="btn-cancel-category">Cancelar</button>
+                        <button type="button" class="btn" style="background: var(--primary);" id="btn-save-category">Guardar</button>
                     </div>
                 </form>
             </div>
@@ -567,6 +606,8 @@
             currentProjectId: null,
             editingProjectId: null,
             editingTaskId: null,
+            editingCategoryId: null,
+            selectedCatColor: '#007AFF',
             pendingDelete: null,
             selectedColor: '#007AFF',
             currentDashboardListItems: [],
@@ -665,6 +706,7 @@
                 d = d || {};
                 if (!Array.isArray(d.projects)) d.projects = [];
                 if (!Array.isArray(d.activityLog)) d.activityLog = [];
+                if (!Array.isArray(d.categories)) d.categories = [];
                 d.projects.forEach(p => { if (!Array.isArray(p.tasks)) p.tasks = []; });
                 return d;
             },
@@ -673,6 +715,7 @@
                 try {
                     app.renderDashboard();
                     app.renderProjects();
+                    app.renderCategories();
                     app.renderAnalytics();
                     app.renderCalendar();
                     if (app.currentProjectId) {
@@ -791,6 +834,115 @@
             },
 
             // 3. RENDERERS
+            // --- CATEGORÍAS ---
+            esc(str) { return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); },
+            getCategory(id) {
+                if (id == null || id === '') return null;
+                return (app.data.categories || []).find(c => String(c.id) === String(id)) || null;
+            },
+            categoryChipHTML(cat) {
+                if (!cat) return '';
+                const col = cat.color || '#007AFF';
+                return `<span class="cat-chip" style="background:${app.hexToRgba(col, 0.12)}; color:${col};"><i class="dot" style="background:${col};"></i>${app.esc(cat.name)}</span>`;
+            },
+            updateDetailCategory(p) {
+                const el = document.getElementById('detail-category'); if (!el) return;
+                const cat = app.getCategory(p && p.categoryId);
+                if (cat) { el.outerHTML = app.categoryChipHTML(cat).replace('<span class="cat-chip"', '<span id="detail-category" class="cat-chip"'); }
+                else { el.style.display = 'none'; el.innerHTML = ''; }
+            },
+            populateCategorySelect(selectedId) {
+                const sel = document.getElementById('p-category'); if (!sel) return;
+                const cats = app.data.categories || [];
+                sel.innerHTML = '';
+                const none = document.createElement('option'); none.value = ''; none.textContent = 'Sin categoría'; sel.appendChild(none);
+                cats.forEach(c => { const o = document.createElement('option'); o.value = String(c.id); o.textContent = c.name; sel.appendChild(o); });
+                sel.value = (selectedId != null && cats.some(c => String(c.id) === String(selectedId))) ? String(selectedId) : '';
+                const hint = document.getElementById('p-category-hint'); if (hint) hint.style.display = cats.length ? 'none' : 'block';
+            },
+            renderCatColorPicker() {
+                const container = document.getElementById('cat-color-picker'); if (!container) return;
+                container.innerHTML = '';
+                app.colors.forEach(c => {
+                    const div = document.createElement('div'); div.className = 'color-option'; div.style.backgroundColor = c;
+                    if (c === app.selectedCatColor) div.classList.add('selected');
+                    div.onclick = () => { app.selectedCatColor = c; app.renderCatColorPicker(); };
+                    container.appendChild(div);
+                });
+            },
+            renderCategories() {
+                const list = document.getElementById('category-list'); if (!list) return;
+                list.innerHTML = '';
+                const cats = app.data.categories || [];
+                if (cats.length === 0) {
+                    list.innerHTML = `<div class="empty-state" style="padding: 2rem;"><i data-lucide="tags" style="width:48px;height:48px; margin-bottom: 10px; opacity: 0.5;"></i><p>Sin categorías. Crea la primera con el botón "Nueva".</p></div>`;
+                    try { lucide.createIcons(); } catch (e) {}
+                    return;
+                }
+                cats.forEach(c => {
+                    const col = c.color || '#007AFF';
+                    const count = (app.data.projects || []).filter(p => String(p.categoryId) === String(c.id)).length;
+                    const div = document.createElement('div'); div.className = 'project-item cat-item'; div.style.cursor = 'default';
+                    div.innerHTML = `<div class="project-info-left"><div class="project-icon-box" style="background:${app.hexToRgba(col,0.12)}; color:${col};"><i data-lucide="tag" style="width:20px;"></i></div><div><h3 style="font-size:1rem;font-weight:600;word-break:break-word;">${app.esc(c.name)}</h3><div style="color:var(--text-secondary);font-size:0.85rem;margin-top:2px;">${count} ${count === 1 ? 'proyecto' : 'proyectos'}</div></div></div><div style="display:flex;align-items:center;gap:6px;"><button class="btn-ghost edit-cat-btn" title="Editar"><i data-lucide="pencil" style="width:18px;"></i></button><button class="btn-ghost danger delete-cat-btn" title="Eliminar"><i data-lucide="trash-2" style="width:18px;"></i></button></div>`;
+                    div.querySelector('.edit-cat-btn').addEventListener('click', () => app.openEditCategoryModal(c.id));
+                    div.querySelector('.delete-cat-btn').addEventListener('click', () => app.deleteCategory(c.id));
+                    list.appendChild(div);
+                });
+                try { lucide.createIcons(); } catch (e) {}
+            },
+            toggleCategoryModal(show) {
+                if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+                const modal = document.getElementById('category-modal'); if (!modal) return;
+                modal.style.display = show ? 'flex' : 'none';
+                if (!show) app.editingCategoryId = null;
+            },
+            openCreateCategoryModal() {
+                app.editingCategoryId = null;
+                document.getElementById('category-modal-title').textContent = 'Nueva Categoría';
+                document.getElementById('c-name').value = '';
+                app.selectedCatColor = '#007AFF'; app.renderCatColorPicker(); app.toggleCategoryModal(true);
+            },
+            openEditCategoryModal(id) {
+                const c = app.getCategory(id); if (!c) return;
+                app.editingCategoryId = c.id;
+                document.getElementById('category-modal-title').textContent = 'Editar Categoría';
+                document.getElementById('c-name').value = c.name;
+                app.selectedCatColor = c.color || '#007AFF'; app.renderCatColorPicker(); app.toggleCategoryModal(true);
+            },
+            async saveCategory() {
+                const name = document.getElementById('c-name').value.trim();
+                if (!name) { alert('Escribe un nombre para la categoría'); return; }
+                if (!Array.isArray(app.data.categories)) app.data.categories = [];
+                const dup = app.data.categories.find(c => c.name.toLowerCase() === name.toLowerCase() && c.id !== app.editingCategoryId);
+                if (dup) { alert('Ya existe una categoría con ese nombre'); return; }
+                const btn = document.getElementById('btn-save-category');
+                btn.disabled = true;
+                try {
+                    if (app.editingCategoryId != null) {
+                        const c = app.getCategory(app.editingCategoryId);
+                        if (c) { c.name = name; c.color = app.selectedCatColor; app.logActivity(`Se ha editado la categoría "${name}"`); }
+                    } else {
+                        app.data.categories.push({ id: Date.now(), name, color: app.selectedCatColor });
+                        app.logActivity(`Se ha creado la categoría "${name}"`);
+                    }
+                    await app.saveData();
+                    app.toggleCategoryModal(false);
+                    app.renderCategories(); app.renderProjects(); app.renderDashboard();
+                    if (app.currentProjectId) { const p = app.data.projects.find(pr => pr.id === app.currentProjectId); if (p) app.updateDetailCategory(p); }
+                } catch (err) { alert('Error al guardar categoría: ' + err.message); }
+                finally { btn.disabled = false; }
+            },
+            deleteCategory(id) {
+                const c = app.getCategory(id); if (!c) return;
+                const count = (app.data.projects || []).filter(p => String(p.categoryId) === String(id)).length;
+                app.pendingDelete = { type: 'category', id: c.id };
+                document.getElementById('conf-modal-title').textContent = '¿Eliminar Categoría?';
+                document.getElementById('conf-modal-msg').textContent = count > 0
+                    ? `${count} ${count === 1 ? 'proyecto quedará' : 'proyectos quedarán'} sin categoría. Los proyectos no se eliminan.`
+                    : 'Se eliminará permanentemente.';
+                app.toggleConfirmationModal(true);
+            },
+
             renderColorPicker() {
                 const container = document.getElementById('color-picker'); 
                 if (!container) return;
@@ -852,8 +1004,8 @@
                 }
                 app.data.projects.forEach(p => {
                     const div = document.createElement('div'); div.className = 'project-item';
-                    const pColor = p.color || '#007AFF'; const activeClass = p.active ? 'dot-active' : 'dot-inactive';
-                    div.innerHTML = `<div class="project-info-left"><div class="project-icon-box" style="background:${this.hexToRgba(pColor,0.1)}; color:${pColor};"><i data-lucide="folder" style="width:20px;"></i></div><div><div style="display:flex;align-items:center;margin-bottom:4px;"><span class="status-dot ${activeClass}"></span><h3 style="font-size:1rem;font-weight:600;">${p.name}</h3></div><div style="color:var(--text-secondary);font-size:0.85rem;">${p.pubs} pubs/sem</div></div></div><div style="display:flex;align-items:center;gap:20px;"><div style="text-align:right;"><div style="font-size:0.7rem;font-weight:700;color:var(--text-tertiary);">TAREAS</div><div style="font-size:0.9rem;font-weight:600;">${p.tasks.filter(t=>t.done).length}/${p.tasks.length}</div></div><button class="btn-ghost danger delete-btn"><i data-lucide="trash-2" style="width:18px;"></i></button><i data-lucide="chevron-right" style="color:#D2D2D7; width: 20px;"></i></div>`;
+                    const pColor = p.color || '#007AFF'; const activeClass = p.active ? 'dot-active' : 'dot-inactive'; const catChip = app.categoryChipHTML(app.getCategory(p.categoryId));
+                    div.innerHTML = `<div class="project-info-left"><div class="project-icon-box" style="background:${this.hexToRgba(pColor,0.1)}; color:${pColor};"><i data-lucide="folder" style="width:20px;"></i></div><div><div style="display:flex;align-items:center;margin-bottom:4px;"><span class="status-dot ${activeClass}"></span><h3 style="font-size:1rem;font-weight:600;">${p.name}</h3></div><div style="color:var(--text-secondary);font-size:0.85rem;">${p.pubs} pubs/sem</div>${catChip}</div></div><div style="display:flex;align-items:center;gap:20px;"><div style="text-align:right;"><div style="font-size:0.7rem;font-weight:700;color:var(--text-tertiary);">TAREAS</div><div style="font-size:0.9rem;font-weight:600;">${p.tasks.filter(t=>t.done).length}/${p.tasks.length}</div></div><button class="btn-ghost danger delete-btn"><i data-lucide="trash-2" style="width:18px;"></i></button><i data-lucide="chevron-right" style="color:#D2D2D7; width: 20px;"></i></div>`;
                     
                     div.addEventListener('click', () => app.openProject(p.id));
                     const delBtn = div.querySelector('.delete-btn');
@@ -1004,6 +1156,9 @@
                 safeAdd('btn-cancel-profile', () => app.toggleProfileModal(false));
                 safeAdd('btn-save-profile', () => app.saveProfileId());
 
+                safeAdd('btn-new-category', () => app.openCreateCategoryModal());
+                safeAdd('btn-save-category', () => app.saveCategory());
+                safeAdd('btn-cancel-category', () => app.toggleCategoryModal(false));
                 safeAdd('btn-close-sync-banner', () => app.hideSyncWarning());
                 const onEnter = (id, btnId) => {
                     const el = document.getElementById(id);
@@ -1012,6 +1167,7 @@
                 onEnter('login-id-input', 'btn-login-action');
                 onEnter('input-edit-profile-id', 'btn-save-profile');
                 onEnter('p-name', 'btn-save-project');
+                onEnter('c-name', 'btn-save-category');
                 onEnter('t-name', 'btn-save-task');
 
                 safeAdd('btn-logout', () => { localStorage.removeItem('flujo_custom_id'); location.reload(); });
@@ -1056,7 +1212,7 @@
                 document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
                 document.getElementById(tabId).classList.add('active');
                 document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-                const tabs = ['dashboard', 'proyectos', 'calendario', 'analiticas', 'configuracion'];
+                const tabs = ['dashboard', 'proyectos', 'calendario', 'categorias', 'analiticas', 'configuracion'];
                 const idx = tabs.indexOf(tabId);
                 if(idx !== -1) document.querySelectorAll('.nav-item')[idx].classList.add('active');
                 
@@ -1078,6 +1234,7 @@
 
                 const mc = document.querySelector('.main-content'); if (mc) mc.scrollTop = 0;
                 if (tabId === 'dashboard') app.renderDashboard();
+                if (tabId === 'categorias') app.renderCategories();
                 if (tabId === 'calendario') app.renderCalendar();
                 if (tabId === 'analiticas') app.renderAnalytics();
                 setTimeout(() => lucide.createIcons(), 50);
@@ -1094,7 +1251,7 @@
             openCreateProjectModal() {
                 app.editingProjectId = null; document.getElementById('project-modal-title').textContent = 'Nuevo Proyecto';
                 const form = document.querySelector('#project-form'); if(form) form.reset();
-                app.selectedColor = '#007AFF'; app.renderColorPicker(); app.toggleProjectModal(true);
+                app.selectedColor = '#007AFF'; app.renderColorPicker(); app.populateCategorySelect(null); app.toggleProjectModal(true);
             },
             openEditProjectModal() {
                 if(!app.currentProjectId) return;
@@ -1102,7 +1259,7 @@
                 app.editingProjectId = p.id; document.getElementById('project-modal-title').textContent = 'Editar Proyecto';
                 document.getElementById('p-name').value = p.name; document.getElementById('p-contract').value = p.contractDate;
                 document.getElementById('p-pubs').value = p.pubs; document.getElementById('p-active').checked = p.active;
-                app.selectedColor = p.color || '#007AFF'; app.renderColorPicker(); app.toggleProjectModal(true);
+                app.selectedColor = p.color || '#007AFF'; app.renderColorPicker(); app.populateCategorySelect(p.categoryId); app.toggleProjectModal(true);
             },
             
             // --- 5. LOGIC FUNCTIONS ---
@@ -1117,6 +1274,7 @@
                 const contract = document.getElementById('p-contract').value;
                 const pubs = document.getElementById('p-pubs').value;
                 const isActive = document.getElementById('p-active').checked;
+                const catSel = document.getElementById('p-category'); const categoryId = (catSel && catSel.value) ? Number(catSel.value) : null;
                 
                 if(!name) { alert("Nombre requerido"); return; }
                 
@@ -1128,11 +1286,11 @@
                     if (app.editingProjectId) {
                         const p = app.data.projects.find(proj => proj.id === app.editingProjectId);
                         if(p) { 
-                            p.name = name; p.contractDate = contract; p.pubs = pubs; p.active = isActive; p.color = app.selectedColor;
+                            p.name = name; p.contractDate = contract; p.pubs = pubs; p.active = isActive; p.color = app.selectedColor; p.categoryId = categoryId;
                             if(app.currentProjectId === p.id) { 
                                 const titleEl = document.getElementById('detail-title');
                                 if(titleEl) titleEl.textContent = p.name; 
-                                app.updateProjectWeeklyStats(p); 
+                                app.updateProjectWeeklyStats(p); app.updateDetailCategory(p);
                             }
                             logMsg = `Se ha editado el proyecto "${name}"`;
                         }
@@ -1145,6 +1303,7 @@
                             active: isActive, 
                             pubs, 
                             color: app.selectedColor, 
+                            categoryId, 
                             tasks: [] 
                         });
                         app.sendNotification("Proyecto Creado", name);
@@ -1224,7 +1383,13 @@
                 if (app.pendingDelete.type === 'reset') {
                      app.data.projects = []; await app.saveData(); location.reload(); return;
                 }
-                if (app.pendingDelete.type === 'project') {
+                if (app.pendingDelete.type === 'category') {
+                    const c = app.getCategory(app.pendingDelete.id);
+                    if (c) logMsg = `Se ha eliminado la categoría "${c.name}"`;
+                    app.data.categories = (app.data.categories || []).filter(x => String(x.id) !== String(app.pendingDelete.id));
+                    app.data.projects.forEach(p => { if (String(p.categoryId) === String(app.pendingDelete.id)) p.categoryId = null; });
+                    if (app.currentProjectId) { const cp = app.data.projects.find(pr => pr.id === app.currentProjectId); if (cp) app.updateDetailCategory(cp); }
+                } else if (app.pendingDelete.type === 'project') {
                     const p = app.data.projects.find(p => p.id === app.pendingDelete.id);
                     if(p) logMsg = `Se ha eliminado el proyecto "${p.name}"`;
                     app.data.projects = app.data.projects.filter(p => p.id !== app.pendingDelete.id);
@@ -1239,7 +1404,7 @@
                     }
                 }
                 app.logActivity(logMsg);
-                await app.saveData(); app.renderProjects(); app.toggleConfirmationModal(false);
+                await app.saveData(); app.renderProjects(); app.renderCategories(); app.renderDashboard(); app.toggleConfirmationModal(false);
             },
             
             openProject(id) {
@@ -1248,7 +1413,7 @@
                 document.getElementById('detail-title').textContent = p.name; document.getElementById('detail-contract').textContent = p.contractDate || '-';
                 document.getElementById('detail-pubs').textContent = p.pubs; document.getElementById('detail-badge').textContent = p.active ? 'Activo' : 'Inactivo';
                 document.getElementById('detail-badge').className = p.active ? 'badge badge-active' : 'badge badge-inactive';
-                app.renderTasks(p); lucide.createIcons();
+                app.updateDetailCategory(p); app.renderTasks(p); lucide.createIcons();
             },
             closeProject() { 
                 app.currentProjectId = null; 
