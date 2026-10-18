@@ -178,6 +178,16 @@
         .cat-chip i.dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
         .field-hint { font-size: 0.8rem; color: var(--text-secondary); margin: -0.6rem 0 1.2rem; }
 
+        /* Login / registro */
+        .auth-tabs { display: flex; background: #F2F2F7; border-radius: 12px; padding: 4px; margin-bottom: 1.4rem; }
+        .auth-tabs button { flex: 1; border: none; background: transparent; padding: 9px 6px; border-radius: 9px; font-weight: 600; font-size: 0.9rem; color: var(--text-secondary); cursor: pointer; font-family: inherit; }
+        .auth-tabs button.active { background: white; color: var(--text-main); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+        .pw-wrap { position: relative; }
+        .pw-wrap .form-input { padding-right: 78px; }
+        .pw-toggle { position: absolute; right: 6px; top: 0; height: 48px; border: none; background: transparent; color: var(--primary); font-weight: 600; font-size: 0.8rem; cursor: pointer; padding: 0 10px; font-family: inherit; }
+        .auth-error { display: none; color: var(--danger); background: #FFF0F0; border-radius: 10px; padding: 10px 12px; font-size: 0.85rem; line-height: 1.4; text-align: left; margin: 0 0 14px; }
+        .auth-hint { font-size: 0.8rem; color: var(--text-secondary); margin-top: 16px; line-height: 1.5; }
+
         /* Aviso de sincronización */
         #sync-banner { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 12px; right: 12px; max-width: 560px; margin: 0 auto; background: #FFF4E5; color: #8A4B00; border: 1px solid rgba(255,149,0,0.35); border-radius: 14px; padding: 12px 14px; font-size: 0.85rem; line-height: 1.4; box-shadow: var(--shadow-lg); z-index: 3000; display: none; align-items: flex-start; gap: 10px; }
         #sync-banner button { background: none; border: none; cursor: pointer; color: inherit; font-size: 1.1rem; line-height: 1; padding: 0 2px; }
@@ -261,9 +271,25 @@
         <div class="login-card">
             <div class="login-icon"><i data-lucide="command" style="width: 32px; height: 32px;"></i></div>
             <h1 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">Bienvenido</h1>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem;">Ingresa un nombre único para cargar tus datos.</p>
-            <input type="text" id="login-id-input" class="form-input" placeholder="Ej: juan, empresa-x, demo..." style="text-align: center; font-weight: 600; font-size: 1.1rem;">
-            <button class="btn" id="btn-login-action" style="width: 100%; padding: 14px; background: var(--primary);">Entrar</button>
+            <p id="auth-subtitle" style="color: var(--text-secondary); margin-bottom: 1.5rem;">Inicia sesión con tu usuario y contraseña.</p>
+            <div class="auth-tabs">
+                <button type="button" id="tab-login" class="active">Iniciar sesión</button>
+                <button type="button" id="tab-register">Registrarme</button>
+            </div>
+            <form id="auth-form" novalidate onsubmit="return false;">
+                <input type="text" id="login-id-input" class="form-input" placeholder="Usuario" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" style="text-align: center; font-weight: 600; font-size: 1.1rem;">
+                <div class="pw-wrap">
+                    <input type="password" id="login-pass-input" class="form-input" placeholder="Contraseña" autocomplete="current-password" style="text-align: center; font-size: 1.1rem;">
+                    <button type="button" class="pw-toggle" data-target="login-pass-input">Ver</button>
+                </div>
+                <div class="pw-wrap" id="register-confirm-wrap" style="display:none;">
+                    <input type="password" id="login-pass-confirm" class="form-input" placeholder="Repite la contraseña" autocomplete="new-password" style="text-align: center; font-size: 1.1rem;">
+                    <button type="button" class="pw-toggle" data-target="login-pass-confirm">Ver</button>
+                </div>
+                <div id="auth-error" class="auth-error" role="alert"></div>
+                <button type="button" class="btn" id="btn-login-action" style="width: 100%; padding: 14px; background: var(--primary);">Entrar</button>
+            </form>
+            <p class="auth-hint" id="auth-hint">¿Tu cuenta es anterior y no tiene contraseña? Entra con tu usuario y la contraseña predeterminada: <strong>flujo123</strong>. Luego puedes cambiarla en Ajustes.</p>
         </div>
     </div>
 
@@ -433,11 +459,16 @@
                             <!-- Profile ID Area with Edit Button -->
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
                                 <div style="background: #F5F5F7; padding: 10px; border-radius: 8px; font-family: monospace; font-weight: 600; flex: 1;" id="settings-user-id">...</div>
-                                <button class="btn-ghost" id="btn-change-profile-name" title="Editar Nombre de Perfil" style="background: #F2F2F7; border-radius: 8px; width: 40px; height: 40px;">
-                                    <i data-lucide="pencil" style="width: 18px; color: var(--primary);"></i>
-                                </button>
                             </div>
                             
+                            <div style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); letter-spacing:0.05em; margin-bottom:6px;">CONTRASEÑA</div>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                <div id="settings-pass-status" style="background: #F5F5F7; padding: 10px; border-radius: 8px; flex: 1; font-size: 0.9rem; line-height: 1.4;">...</div>
+                                <button class="btn-ghost" id="btn-change-password" title="Cambiar contraseña" style="background: #F2F2F7; border-radius: 8px; width: 40px; height: 40px;">
+                                    <i data-lucide="key-round" style="width: 18px; color: var(--primary);"></i>
+                                </button>
+                            </div>
+
                             <div style="display: flex; gap: 10px;">
                                 <button class="btn" style="background: white; border: 1px solid var(--border); color: var(--text-main);" id="btn-logout">
                                     <i data-lucide="log-out" style="width:16px; margin-right:5px;"></i> Cerrar Sesión
@@ -500,6 +531,26 @@
                     <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:30px;">
                         <button class="btn" style="background:transparent; color:var(--text-secondary); box-shadow:none; padding: 10px 20px;" id="btn-cancel-profile">Cancelar</button>
                         <button class="btn" style="background: var(--primary);" id="btn-save-profile">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="password-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h2 style="margin-bottom: 0.5rem; font-size: 1.5rem;">Cambiar contraseña</h2>
+                <p style="color:var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">Si nunca la has cambiado, tu contraseña actual es la predeterminada: <strong>flujo123</strong>.</p>
+                <form id="password-form" novalidate onsubmit="return false;">
+                    <label>CONTRASEÑA ACTUAL</label>
+                    <input type="password" id="pw-current" class="form-input" autocomplete="current-password">
+                    <label>NUEVA CONTRASEÑA (MÍN. 6 CARACTERES)</label>
+                    <input type="password" id="pw-new" class="form-input" autocomplete="new-password">
+                    <label>CONFIRMAR NUEVA CONTRASEÑA</label>
+                    <input type="password" id="pw-confirm" class="form-input" autocomplete="new-password">
+                    <div id="pw-modal-error" class="auth-error" role="alert"></div>
+                    <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+                        <button type="button" class="btn" style="background:transparent; color:var(--text-secondary); box-shadow:none; padding: 10px 20px;" id="btn-cancel-password">Cancelar</button>
+                        <button type="button" class="btn" style="background: var(--primary);" id="btn-save-password">Guardar</button>
                     </div>
                 </form>
             </div>
@@ -620,7 +671,7 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js';
         import { getAnalytics, isSupported } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-analytics.js';
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js';
-        import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js';
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyDUfkzMZx6_vZOA-uMPUaB18n8O0uWD2wg",
@@ -635,6 +686,50 @@
 
         // Use global app ID or fallback
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'administrador-proyectos-main';
+
+function sha256(bytes) {
+    const K = [], H = [];
+    let n = 0;
+    const isPrime = c => { for (let i = 2; i * i <= c; i++) if (c % i === 0) return false; return true; };
+    for (let c = 2; n < 64; c++) {
+        if (isPrime(c)) {
+            if (n < 8) H[n] = (Math.pow(c, 1 / 2) * 4294967296) | 0;
+            K[n++] = (Math.pow(c, 1 / 3) * 4294967296) | 0;
+        }
+    }
+    const len = bytes.length;
+    const padLen = (((len + 9 + 63) >> 6) << 6);
+    const buf = new Uint8Array(padLen);
+    buf.set(bytes); buf[len] = 0x80;
+    const dv = new DataView(buf.buffer);
+    dv.setUint32(padLen - 8, Math.floor((len * 8) / 4294967296));
+    dv.setUint32(padLen - 4, (len * 8) >>> 0);
+    const w = new Array(64);
+    let h = H.slice();
+    for (let off = 0; off < padLen; off += 64) {
+        for (let i = 0; i < 16; i++) w[i] = dv.getUint32(off + i * 4);
+        for (let i = 16; i < 64; i++) {
+            const a = w[i - 15], b = w[i - 2];
+            const s0 = ((a >>> 7) | (a << 25)) ^ ((a >>> 18) | (a << 14)) ^ (a >>> 3);
+            const s1 = ((b >>> 17) | (b << 15)) ^ ((b >>> 19) | (b << 13)) ^ (b >>> 10);
+            w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+        }
+        let [a, b, c, d, e, f, g, hh] = h;
+        for (let i = 0; i < 64; i++) {
+            const S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+            const ch = (e & f) ^ (~e & g);
+            const t1 = (hh + S1 + ch + K[i] + w[i]) | 0;
+            const S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+            const maj = (a & b) ^ (a & c) ^ (b & c);
+            const t2 = (S0 + maj) | 0;
+            hh = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+        }
+        h = [(h[0] + a) | 0, (h[1] + b) | 0, (h[2] + c) | 0, (h[3] + d) | 0, (h[4] + e) | 0, (h[5] + f) | 0, (h[6] + g) | 0, (h[7] + hh) | 0];
+    }
+    const out = new Uint8Array(32), odv = new DataView(out.buffer);
+    h.forEach((v, i) => odv.setUint32(i * 4, v >>> 0));
+    return out;
+}
 
         const app = {
             data: { projects: [], activityLog: [] },
@@ -728,6 +823,181 @@
                 if(el && app.userId) el.textContent = app.userId;
             },
 
+            // --- CUENTAS Y CONTRASEÑAS ---
+            DEFAULT_PASSWORD: 'flujo123',
+            PASS_ITER: 20000,
+            authMode: 'login',
+
+            toHex(u8) { return Array.from(u8, b => b.toString(16).padStart(2, '0')).join(''); },
+            randomSalt() {
+                const a = new Uint8Array(16);
+                if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(a);
+                else for (let i = 0; i < 16; i++) a[i] = Math.floor(Math.random() * 256);
+                return app.toHex(a);
+            },
+            async hashPassword(pw, salt, iter) {
+                await new Promise(r => setTimeout(r, 30)); // deja pintar el estado "Verificando…"
+                const p = new TextEncoder().encode(salt + ':' + pw);
+                let h = sha256(p);
+                for (let i = 1; i < iter; i++) { const m = new Uint8Array(32 + p.length); m.set(h); m.set(p, 32); h = sha256(m); }
+                return app.toHex(h);
+            },
+            async makeSecurity(pw) {
+                const salt = app.randomSalt();
+                const hash = await app.hashPassword(pw, salt, app.PASS_ITER);
+                return { salt, iter: app.PASS_ITER, hash, isDefault: pw === app.DEFAULT_PASSWORD, updatedAt: Date.now() };
+            },
+            async checkPassword(sec, pw) {
+                if (!sec || !sec.hash || !sec.salt) return pw === app.DEFAULT_PASSWORD; // cuenta anterior: contraseña predeterminada
+                const h = await app.hashPassword(pw, sec.salt, sec.iter || app.PASS_ITER);
+                let diff = h.length ^ sec.hash.length;
+                for (let i = 0; i < h.length; i++) diff |= h.charCodeAt(i) ^ (sec.hash.charCodeAt(i) || 0);
+                return diff === 0;
+            },
+            waitForAuth(ms) {
+                return new Promise(res => {
+                    const t0 = Date.now();
+                    const tick = () => { if (app.authUserId) return res(true); if (Date.now() - t0 >= ms) return res(false); setTimeout(tick, 150); };
+                    tick();
+                });
+            },
+            readLocalFor(id) {
+                try { const raw = localStorage.getItem('flujo_data_' + id); if (raw) return JSON.parse(raw); } catch (e) {}
+                return null;
+            },
+            async fetchProfile(id) {
+                const ready = await app.waitForAuth(10000);
+                if (ready && app.db) {
+                    try {
+                        const snap = await getDoc(doc(app.db, 'artifacts', app.appId, 'public', 'data', 'files', id));
+                        return { exists: snap.exists(), data: snap.exists() ? snap.data() : null, offline: false };
+                    } catch (err) {
+                        const local = app.readLocalFor(id);
+                        if (local) return { exists: true, data: local, offline: true };
+                        throw err;
+                    }
+                }
+                const local = app.readLocalFor(id);
+                return { exists: !!local, data: local, offline: true };
+            },
+            writeDocFor(id, data) {
+                return setDoc(doc(app.db, 'artifacts', app.appId, 'public', 'data', 'files', id), JSON.parse(JSON.stringify(data)));
+            },
+            setAuthError(msg) {
+                const el = document.getElementById('auth-error'); if (!el) return;
+                el.textContent = msg || ''; el.style.display = msg ? 'block' : 'none';
+            },
+            setAuthMode(mode) {
+                app.authMode = mode;
+                const reg = mode === 'register';
+                document.getElementById('tab-login').classList.toggle('active', !reg);
+                document.getElementById('tab-register').classList.toggle('active', reg);
+                document.getElementById('register-confirm-wrap').style.display = reg ? 'block' : 'none';
+                document.getElementById('login-pass-input').setAttribute('autocomplete', reg ? 'new-password' : 'current-password');
+                document.getElementById('auth-subtitle').textContent = reg ? 'Crea tu usuario y una contraseña para proteger tus datos.' : 'Inicia sesión con tu usuario y contraseña.';
+                document.getElementById('btn-login-action').textContent = reg ? 'Crear cuenta' : 'Entrar';
+                document.getElementById('auth-hint').style.display = reg ? 'none' : 'block';
+                app.setAuthError('');
+            },
+            setAuthBusy(busy) {
+                const btn = document.getElementById('btn-login-action'); if (!btn) return;
+                btn.disabled = busy;
+                btn.textContent = busy ? 'Verificando…' : (app.authMode === 'register' ? 'Crear cuenta' : 'Entrar');
+            },
+            async submitAuth() {
+                const id = document.getElementById('login-id-input').value.trim();
+                const pw = document.getElementById('login-pass-input').value;
+                const confirmPw = document.getElementById('login-pass-confirm').value;
+                const reg = app.authMode === 'register';
+                app.setAuthError('');
+                if (!id) return app.setAuthError('Escribe tu nombre de usuario.');
+                if (id.includes('/')) return app.setAuthError('El usuario no puede contener el símbolo "/".');
+                if (!pw) return app.setAuthError('Escribe tu contraseña.');
+                if (reg) {
+                    if (id.length < 3) return app.setAuthError('El usuario debe tener al menos 3 caracteres.');
+                    if (pw.length < 6) return app.setAuthError('La contraseña debe tener al menos 6 caracteres.');
+                    if (pw === app.DEFAULT_PASSWORD) return app.setAuthError('Elige una contraseña distinta a la predeterminada.');
+                    if (pw !== confirmPw) return app.setAuthError('Las contraseñas no coinciden.');
+                }
+                app.setAuthBusy(true);
+                try {
+                    const prof = await app.fetchProfile(id);
+                    if (!reg) {
+                        if (!prof.exists) return app.setAuthError('Usuario o contraseña incorrectos.');
+                        const data = prof.data || {};
+                        const ok = await app.checkPassword(data.security, pw);
+                        if (!ok) return app.setAuthError('Usuario o contraseña incorrectos.');
+                        await app.completeLogin(id, data);
+                    } else {
+                        if (prof.offline) return app.setAuthError('Necesitas conexión a internet para crear una cuenta.');
+                        if (prof.exists) return app.setAuthError('Ese nombre de usuario ya está en uso. Elige otro o inicia sesión.');
+                        const data = app.normalizeData({ security: await app.makeSecurity(pw) });
+                        try { await app.writeDocFor(id, data); }
+                        catch (err) { console.error(err); return app.setAuthError('No se pudo crear la cuenta. ' + app.syncErrorMessage(err, true)); }
+                        await app.completeLogin(id, data);
+                    }
+                } catch (err) {
+                    console.error('Auth error', err);
+                    app.setAuthError('No se pudo verificar tu cuenta. ' + app.syncErrorMessage(err, true));
+                } finally { app.setAuthBusy(false); }
+            },
+            async completeLogin(id, data) {
+                app.userId = id;
+                localStorage.setItem('flujo_custom_id', id);
+                app.data = app.normalizeData(data);
+                // Cuenta anterior sin contraseña: queda con la predeterminada para que pueda cambiarla
+                if (!app.data.security) app.data.security = await app.makeSecurity(app.DEFAULT_PASSWORD);
+                app.currentProjectId = null; app.currentCategoryId = null;
+                app.closeProject(); app.closeCategory();
+                document.getElementById('login-overlay').style.display = 'none';
+                ['login-id-input', 'login-pass-input', 'login-pass-confirm'].forEach(i => { const el = document.getElementById(i); if (el) el.value = ''; });
+                app.setAuthError('');
+                app.renderUserId();
+                app.renderAll();
+                app.navigate('dashboard');
+                await app.saveData();
+                app.setupFirestoreListener();
+            },
+            renderSecurityStatus() {
+                const el = document.getElementById('settings-pass-status'); if (!el) return;
+                const sec = app.data && app.data.security;
+                if (!sec || sec.isDefault) {
+                    el.innerHTML = `<strong>Predeterminada:</strong> <span style="font-family:monospace;">${app.DEFAULT_PASSWORD}</span><div style="color:#FF9500; font-size:0.8rem; margin-top:2px;">Cámbiala para proteger tu cuenta.</div>`;
+                } else {
+                    el.innerHTML = `<span style="letter-spacing:2px;">••••••••</span> <span style="color:var(--text-secondary); font-size:0.8rem;">Personalizada</span>`;
+                }
+            },
+            togglePasswordModal(show) {
+                if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+                const modal = document.getElementById('password-modal'); if (!modal) return;
+                if (show) {
+                    ['pw-current', 'pw-new', 'pw-confirm'].forEach(i => document.getElementById(i).value = '');
+                    const e = document.getElementById('pw-modal-error'); e.textContent = ''; e.style.display = 'none';
+                }
+                modal.style.display = show ? 'flex' : 'none';
+            },
+            async savePassword() {
+                const cur = document.getElementById('pw-current').value;
+                const nw = document.getElementById('pw-new').value;
+                const cf = document.getElementById('pw-confirm').value;
+                const err = (m) => { const e = document.getElementById('pw-modal-error'); e.textContent = m; e.style.display = 'block'; };
+                document.getElementById('pw-modal-error').style.display = 'none';
+                if (!cur) return err('Escribe tu contraseña actual.');
+                if (nw.length < 6) return err('La nueva contraseña debe tener al menos 6 caracteres.');
+                if (nw === app.DEFAULT_PASSWORD) return err('Elige una contraseña distinta a la predeterminada.');
+                if (nw !== cf) return err('Las contraseñas nuevas no coinciden.');
+                const btn = document.getElementById('btn-save-password'); btn.disabled = true; btn.textContent = 'Guardando…';
+                try {
+                    if (!(await app.checkPassword(app.data.security, cur))) return err('La contraseña actual es incorrecta.');
+                    app.data.security = await app.makeSecurity(nw);
+                    await app.saveData();
+                    app.togglePasswordModal(false);
+                    app.renderSecurityStatus();
+                    alert('Contraseña actualizada.');
+                } catch (e) { console.error(e); err('No se pudo cambiar la contraseña: ' + e.message); }
+                finally { btn.disabled = false; btn.textContent = 'Guardar'; }
+            },
+
             // 2. INIT & DATA
             localKey() { return 'flujo_data_' + app.userId; },
 
@@ -754,6 +1024,7 @@
                     app.renderDashboard();
                     app.renderProjects();
                     app.renderCategories();
+                    app.renderSecurityStatus();
                     if (app.currentCategoryId) app.renderCategoryDetail();
                     app.renderAnalytics();
                     app.renderCalendar();
@@ -772,9 +1043,9 @@
             hideSyncWarning() {
                 const el = document.getElementById('sync-banner'); if (el) el.style.display = 'none';
             },
-            syncErrorMessage(err) {
+            syncErrorMessage(err, noLocal) {
                 const code = String((err && (err.code || err.message)) || '');
-                const local = ' Mientras tanto, tus datos se guardan en este dispositivo.';
+                const local = noLocal ? '' : ' Mientras tanto, tus datos se guardan en este dispositivo.';
                 if (code.includes('operation-not-allowed') || code.includes('admin-restricted'))
                     return 'Activa el acceso "Anónimo" en Firebase → Authentication → Método de acceso.' + local;
                 if (code.includes('permission-denied'))
@@ -1288,13 +1559,18 @@
                 };
 
                 // Login
-                safeAdd('btn-login-action', () => {
-                    const input = document.getElementById('login-id-input');
-                    if (input && input.value.trim() !== '') {
-                        app.updateUserId(input.value.trim());
-                        document.getElementById('login-overlay').style.display = 'none';
-                    } else { alert("Por favor escribe un nombre."); }
-                });
+                safeAdd('btn-login-action', () => app.submitAuth());
+                safeAdd('tab-login', () => app.setAuthMode('login'));
+                safeAdd('tab-register', () => app.setAuthMode('register'));
+                app.setAuthMode('login');
+                document.querySelectorAll('.pw-toggle').forEach(btn => btn.addEventListener('click', () => {
+                    const inp = document.getElementById(btn.dataset.target); if (!inp) return;
+                    const show = inp.type === 'password';
+                    inp.type = show ? 'text' : 'password'; btn.textContent = show ? 'Ocultar' : 'Ver';
+                }));
+                safeAdd('btn-change-password', () => app.togglePasswordModal(true));
+                safeAdd('btn-save-password', () => app.savePassword());
+                safeAdd('btn-cancel-password', () => app.togglePasswordModal(false));
 
                 safeAdd('btn-new-project', () => app.openCreateProjectModal());
                 safeAdd('btn-back-projects', () => app.closeProject());
@@ -1338,7 +1614,11 @@
                     const el = document.getElementById(id);
                     if (el) el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById(btnId).click(); } });
                 };
-                onEnter('login-id-input', 'btn-login-action');
+                const loginUser = document.getElementById('login-id-input');
+                if (loginUser) loginUser.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('login-pass-input').focus(); } });
+                onEnter('login-pass-input', 'btn-login-action');
+                onEnter('login-pass-confirm', 'btn-login-action');
+                onEnter('pw-confirm', 'btn-save-password');
                 onEnter('input-edit-profile-id', 'btn-save-profile');
                 onEnter('p-name', 'btn-save-project');
                 onEnter('c-name', 'btn-save-category');
